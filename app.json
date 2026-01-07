@@ -8,6 +8,11 @@
     "scheme": "techchallenge4",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
+    "extra": {
+      "API_URL": "https://tech-challenge-2-d1kb.onrender.com"
+    },
+
     "ios": {
       "supportsTablet": true
     },
@@ -22,11 +27,10 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -41,7 +45,6 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
       "reactCompiler": true
     }
   }

@@ -1,4 +1,5 @@
 import { createContext, useMemo, useState } from "react";
+import { setHttpRole } from "../api/http";
 
 export const AuthContext = createContext(null);
 
@@ -11,13 +12,17 @@ export function AuthProvider({ children }) {
       token,
       role,
       isAuthenticated: !!token,
+
       signInFakeAsTeacher: async () => {
         setToken("fake-token");
         setRole("teacher");
+        setHttpRole("teacher");
       },
+
       signOut: async () => {
         setToken(null);
         setRole(null);
+        setHttpRole(null);
       },
     }),
     [token, role]
