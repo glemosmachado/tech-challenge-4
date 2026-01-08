@@ -1,14 +1,24 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
 import PostsAdminScreen from "../screens/posts/PostsAdminScreen";
-import PostsListScreen from "../screens/posts/PostsListScreen";
+import PostsStackNavigator from "./PostsStackNavigator";
 
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
   return (
     <Tab.Navigator>
-      <Tab.Screen name="Posts" component={PostsListScreen} />
-      <Tab.Screen name="Admin" component={PostsAdminScreen} />
+      <Tab.Screen
+        name="PostsTab"
+        component={PostsStackNavigator}
+        options={{ title: "Posts", headerShown: false }}
+      />
+
+      <Tab.Screen
+        name="Admin"
+        component={PostsAdminScreen}
+        options={{ title: "Admin" }}
+      />
     </Tab.Navigator>
   );
 }

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -10,14 +11,14 @@ import {
 } from "react-native";
 import { PostsApi } from "../../api/posts";
 
-export default function PostsListScreen() {
+export default function PostsListScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [message, setMessage] = useState(""); // debug/erro na tela
+  const [message, setMessage] = useState("");
 
-  async function loadAll({ showDebug = true } = {}) {
+  const loadAll = useCallback(async ({ showDebug = true } = {}) => {
     try {
       setMessage("");
       setLoading(true);
@@ -35,33 +36,36 @@ export default function PostsListScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function runSearch(text) {
-    const trimmed = text.trim();
+  const runSearch = useCallback(
+    async (text) => {
+      const trimmed = text.trim();
 
-    try {
-      setMessage("");
-      setLoading(true);
+      try {
+        setMessage("");
+        setLoading(true);
 
-      if (!trimmed) {
-        await loadAll();
-        return;
+        if (!trimmed) {
+          await loadAll();
+          return;
+        }
+
+        const data = await PostsApi.search(trimmed);
+        console.log("PostsApi.search() =>", data);
+
+        const arr = Array.isArray(data) ? data : [];
+        setPosts(arr);
+        setMessage(`debug: busca '${trimmed}' retornou ${arr.length}`);
+      } catch (e) {
+        console.log("Erro search posts:", e);
+        setMessage(e?.message || "Falha ao buscar posts");
+      } finally {
+        setLoading(false);
       }
-
-      const data = await PostsApi.search(trimmed);
-      console.log("PostsApi.search() =>", data);
-
-      const arr = Array.isArray(data) ? data : [];
-      setPosts(arr);
-      setMessage(`debug: busca '${trimmed}' retornou ${arr.length}`);
-    } catch (e) {
-      console.log("Erro search posts:", e);
-      setMessage(e?.message || "Falha ao buscar posts");
-    } finally {
-      setLoading(false);
-    }
-  }
+    },
+    [loadAll]
+  );
 
   async function onRefresh() {
     setRefreshing(true);
@@ -78,7 +82,17 @@ export default function PostsListScreen() {
 
   useEffect(() => {
     loadAll();
-  }, []);
+  }, [loadAll]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (query.trim()) {
+        runSearch(query);
+      } else {
+        loadAll({ showDebug: false });
+      }
+    }, [query, runSearch, loadAll])
+  );
 
   return (
     <View style={{ flex: 1, padding: 16, gap: 12 }}>
@@ -101,9 +115,7 @@ export default function PostsListScreen() {
         }}
       />
 
-      {message ? (
-        <Text style={{ color: "#b00020" }}>{message}</Text>
-      ) : null}
+      {message ? <Text style={{ color: "#b00020" }}>{message}</Text> : null}
 
       {loading ? (
         <View style={{ paddingTop: 24 }}>
@@ -121,8 +133,7 @@ export default function PostsListScreen() {
           }
           renderItem={({ item }) => (
             <Pressable
-              onPress={() => {
-              }}
+              onPress={() => navigation.navigate("PostRead", { postId: item._id })}
               style={{
                 borderWidth: 1,
                 borderColor: "#222",
