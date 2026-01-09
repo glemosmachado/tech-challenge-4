@@ -1,38 +1,45 @@
-import { Pressable, Text, View } from "react-native";
+import { View } from "react-native";
+import { useAuth } from "../../context/AuthContext";
+import { Button, Card, H1, Muted, Screen } from "../../ui/components";
 
 export default function PeopleHomeScreen({ navigation }) {
+  const { user } = useAuth();
+
+  const isTeacher = user?.role === "teacher";
+
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: "800" }}>Pessoas</Text>
-      <Text style={{ opacity: 0.8 }}>
+    <Screen style={{ gap: 14 }}>
+      <H1>Pessoas</H1>
+
+      <Muted>
         Cadastre, edite e exclua professores e alunos (apenas professor logado).
-      </Text>
+      </Muted>
 
-      <Pressable
-        onPress={() => navigation.navigate("TeachersList")}
-        style={{
-          borderWidth: 1,
-          borderColor: "#111",
-          borderRadius: 12,
-          padding: 14,
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ fontWeight: "800" }}>Professores</Text>
-      </Pressable>
+      <Card style={{ gap: 12 }}>
+        <Button
+          title="Professores"
+          variant={isTeacher ? "primary" : "ghost"}
+          onPress={() => navigation.navigate("TeachersList")}
+          disabled={!isTeacher}
+        />
 
-      <Pressable
-        onPress={() => navigation.navigate("StudentsList")}
-        style={{
-          borderWidth: 1,
-          borderColor: "#111",
-          borderRadius: 12,
-          padding: 14,
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ fontWeight: "800" }}>Alunos</Text>
-      </Pressable>
-    </View>
+        <Button
+          title="Alunos"
+          variant={isTeacher ? "primary" : "ghost"}
+          onPress={() => navigation.navigate("StudentsList")}
+          disabled={!isTeacher}
+        />
+      </Card>
+
+      {!isTeacher ? (
+        <Card>
+          <Muted>
+            Você está logado como aluno. A área de Pessoas é restrita a professores.
+          </Muted>
+        </Card>
+      ) : (
+        <View />
+      )}
+    </Screen>
   );
 }

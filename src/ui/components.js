@@ -1,153 +1,115 @@
-import { Platform, StyleSheet } from "react-native";
-import { theme } from "./theme";
+import { Pressable, Text, TextInput, View } from "react-native";
+import theme, { colors } from "./theme";
 
-export const ui = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-    padding: theme.spacing.lg,
-  },
+export function Screen({ style, children }) {
+  return <View style={[theme.components.screen, style]}>{children}</View>;
+}
 
-  headerTitle: {
-    color: theme.colors.text,
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: 0.2,
-  },
+export function Card({ style, children }) {
+  return <View style={[theme.components.card, style]}>{children}</View>;
+}
 
-  headerSubtitle: {
-    marginTop: 6,
-    color: theme.colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
-  },
+export function Title({ children, style }) {
+  return <Text style={[theme.typography.h2, style]}>{children}</Text>;
+}
 
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    ...(Platform.OS === "ios"
-      ? {
-          shadowColor: "#000",
-          shadowOpacity: 0.35,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 10 },
-        }
-      : {
-          elevation: 2,
-        }),
-  },
+export function Subtitle({ children, style }) {
+  return <Text style={[theme.typography.muted, style]}>{children}</Text>;
+}
 
-  cardTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: "800",
-  },
+export function Label({ children, style }) {
+  return (
+    <Text style={[{ color: colors.muted, fontWeight: "700", marginBottom: 8 }, style]}>
+      {children}
+    </Text>
+  );
+}
 
-  text: {
-    color: theme.colors.text,
-    fontSize: 14,
-    lineHeight: 20,
-  },
+export function AppText({ children, style }) {
+  return <Text style={[theme.typography.body, style]}>{children}</Text>;
+}
 
-  muted: {
-    color: theme.colors.muted,
-  },
+export function Input({
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  keyboardType,
+  autoCapitalize,
+  style,
+}) {
+  return (
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor={theme.components.inputMeta.placeholderTextColor}
+      selectionColor={theme.components.inputMeta.selectionColor}
+      secureTextEntry={secureTextEntry}
+      keyboardType={keyboardType}
+      autoCapitalize={autoCapitalize || "none"}
+      style={[theme.components.input, style]}
+    />
+  );
+}
 
-  inputLabel: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.xs,
-    letterSpacing: 0.2,
-  },
+export function PrimaryButton({ title, onPress, style, textStyle, disabled }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        theme.components.buttonPrimary,
+        { opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
+        style,
+      ]}
+    >
+      <Text style={[theme.components.buttonPrimaryText, textStyle]}>{title}</Text>
+    </Pressable>
+  );
+}
 
-  input: {
-    backgroundColor: theme.colors.surface2,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    color: theme.colors.text,
-  },
+export function SecondaryButton({ title, onPress, style, textStyle, disabled }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        theme.components.buttonSecondary,
+        { opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
+        style,
+      ]}
+    >
+      <Text style={[theme.components.buttonSecondaryText, textStyle]}>{title}</Text>
+    </Pressable>
+  );
+}
 
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-  },
+export function DangerButton({ title, onPress, style, textStyle, disabled }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        theme.components.buttonDanger,
+        { opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
+        style,
+      ]}
+    >
+      <Text style={[theme.components.buttonDangerText, textStyle]}>{title}</Text>
+    </Pressable>
+  );
+}
 
-  btn: {
-    borderRadius: theme.radius.md,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  btnPrimary: {
-    backgroundColor: theme.colors.accent,
-  },
-
-  btnPrimaryText: {
-    color: theme.colors.bg,
-    fontWeight: "900",
-    fontSize: 14,
-    letterSpacing: 0.2,
-  },
-
-  btnGhost: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-
-  btnGhostText: {
-    color: theme.colors.text,
-    fontWeight: "800",
-    fontSize: 14,
-  },
-
-  btnDanger: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: theme.colors.danger,
-  },
-
-  btnDangerText: {
-    color: theme.colors.danger,
-    fontWeight: "900",
-    fontSize: 14,
-  },
-
-  pill: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(168,85,247,0.35)",
-    backgroundColor: "rgba(168,85,247,0.12)",
-  },
-
-  pillText: {
-    color: theme.colors.accent,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-
-  separator: {
-    height: 1,
-    backgroundColor: theme.colors.border,
-    marginVertical: theme.spacing.md,
-  },
-
-  errorText: {
-    color: theme.colors.danger,
-    fontWeight: "700",
-  },
-});
+export default {
+  Screen,
+  Card,
+  Title,
+  Subtitle,
+  Label,
+  AppText,
+  Input,
+  PrimaryButton,
+  SecondaryButton,
+  DangerButton,
+};

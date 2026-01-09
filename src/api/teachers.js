@@ -1,7 +1,13 @@
 import { http } from "./http";
 
 function errMsg(e, fallback) {
-  return e?.response?.data?.message || e?.message || fallback || "Request failed";
+  return (
+    e?.response?.data?.message ||
+    e?.response?.data?.error ||
+    e?.message ||
+    fallback ||
+    "Request failed"
+  );
 }
 
 export const TeachersApi = {

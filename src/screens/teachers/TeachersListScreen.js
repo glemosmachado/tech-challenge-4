@@ -1,45 +1,28 @@
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  Text,
-  View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, FlatList, RefreshControl, View } from "react-native";
 import { TeachersApi } from "../../api/teachers";
 import { useAuth } from "../../context/AuthContext";
+import { Button, Card, H1, Input, Loading, Muted, Screen } from "../../ui/components";
 
 export default function TeachersListScreen({ navigation }) {
   const { user } = useAuth();
-  const currentId = user?.id;
 
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [items, setItems] = useState([]);
-  const [message, setMessage] = useState("");
 
   async function load() {
+    setLoading(true);
     try {
-      setMessage("");
-      setLoading(true);
-      const data = await TeachersApi.list(1, 50);
-      const arr = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
-      setItems(arr);
+      const data = await TeachersApi.list({ q: query });
+      setItems(Array.isArray(data) ? data : []);
     } catch (e) {
-      setMessage(e?.message || "Falha ao listar professores");
+      Alert.alert("Erro", e?.response?.data?.message || e?.message || "Falha ao carregar professores");
     } finally {
       setLoading(false);
     }
   }
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [])
-  );
 
   async function onRefresh() {
     setRefreshing(true);
@@ -50,126 +33,105 @@ export default function TeachersListScreen({ navigation }) {
     }
   }
 
-  function handleDelete(id) {
-    Alert.alert("Excluir", "Deseja excluir este professor?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await TeachersApi.remove(id);
-            setItems((prev) => prev.filter((t) => t?._id !== id));
-          } catch (e) {
-            Alert.alert("Erro", e?.message || "Falha ao excluir professor");
-          }
+  useEffect(() => {
+    load();
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => load(), 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  async function handleDelete(item) {
+    Alert.alert(
+      "Excluir professor",
+      "Tem certeza? Essa ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await TeachersApi.remove(item._id);
+              setItems((prev) => prev.filter((x) => x._id !== item._id));
+            } catch (e) {
+              Alert.alert("Erro", e?.response?.data?.message || e?.message || "Falha ao excluir");
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
+  }
+
+  function renderItem({ item }) {
+    const isMe = item?.email && user?.email && item.email === user.email;
+
+    return (
+      <Card style={{ gap: 10 }}>
+        <H1 style={{ fontSize: 16 }}>{item?.name || "Sem nome"}</H1>
+
+        <Muted>{item?.email || "—"}</Muted>
+
+        <Muted>Área: {item?.area || "—"}</Muted>
+
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
+          <View style={{ flex: 1 }}>
+            <Button
+              title="Editar"
+              variant="outline"
+              onPress={() => navigation.navigate("TeacherEdit", { id: item._id })}
+            />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Button
+              title={isMe ? "Exclusão bloqueada" : "Excluir"}
+              variant="danger"
+              onPress={() => handleDelete(item)}
+              disabled={isMe}
+            />
+          </View>
+        </View>
+
+        {isMe ? <Muted>Professor admin (você)</Muted> : null}
+      </Card>
+    );
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ fontSize: 18, fontWeight: "700" }}>Professores</Text>
-
-        <Pressable
-          onPress={() => navigation.navigate("TeacherCreate")}
-          style={{
-            borderWidth: 1,
-            borderColor: "#333",
-            borderRadius: 10,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-          }}
-        >
-          <Text style={{ fontWeight: "700" }}>Novo</Text>
-        </Pressable>
+    <Screen style={{ gap: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <H1>Professores</H1>
+        <View style={{ width: 120 }}>
+          <Button
+            title="Novo"
+            onPress={() => navigation.navigate("TeacherCreate")}
+          />
+        </View>
       </View>
 
-      {message ? <Text style={{ color: "#b00020" }}>{message}</Text> : null}
+      <Input
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Buscar por nome, email ou área..."
+      />
 
       {loading ? (
-        <ActivityIndicator />
+        <Loading text="Carregando..." />
+      ) : items.length === 0 ? (
+        <Card>
+          <Muted>Nenhum professor encontrado.</Muted>
+        </Card>
       ) : (
         <FlatList
           data={items}
-          keyExtractor={(item, idx) => item?._id || String(idx)}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          renderItem={({ item }) => {
-            const id = item?._id;
-            const isMe = currentId && id === currentId;
-
-            return (
-              <View
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#222",
-                  borderRadius: 12,
-                  padding: 12,
-                  gap: 6,
-                }}
-              >
-                <Text style={{ fontSize: 16, fontWeight: "700" }}>
-                  {item?.name || "—"} {isMe ? "(você)" : ""}
-                </Text>
-                <Text style={{ opacity: 0.8 }}>{item?.email || "—"}</Text>
-                <Text style={{ opacity: 0.8 }}>
-                  Área: {item?.area || "—"}
-                </Text>
-
-                <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
-                  <Pressable
-                    onPress={() => navigation.navigate("TeacherEdit", { id })}
-                    style={{
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: "#333",
-                    }}
-                  >
-                    <Text style={{ fontWeight: "700" }}>Editar</Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => {
-                      if (isMe) {
-                        Alert.alert(
-                          "Ação bloqueada",
-                          "Você não pode excluir o professor que está logado."
-                        );
-                        return;
-                      }
-                      handleDelete(id);
-                    }}
-                    style={{
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: isMe ? "#999" : "#b00020",
-                      opacity: isMe ? 0.5 : 1,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontWeight: "700",
-                        color: isMe ? "#999" : "#b00020",
-                      }}
-                    >
-                      Excluir
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-            );
-          }}
+          keyExtractor={(it) => it._id}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          renderItem={renderItem}
         />
       )}
-    </View>
+    </Screen>
   );
 }
