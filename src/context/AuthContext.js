@@ -1,51 +1,79 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { AuthApi } from "../api/auth";
-import { setHttpAuth } from "../api/http";
+import { clearHttpAuth, setHttpAuth } from "../api/http";
 
-export const AuthContext = createContext(null);
+const AuthContext = createContext(null);
+
+const STORAGE_KEY = "@tc4_auth";
 
 export function AuthProvider({ children }) {
+  const [loading, setLoading] = useState(true);
+
+  const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [role, setRole] = useState(null);
-  const [email, setEmail] = useState(null);
-  const [name, setName] = useState(null);
 
-  async function login({ role: roleIn, email: emailIn, password }) {
-    const res = await AuthApi.login(roleIn, emailIn, password);
+  const role = user?.role || null;
 
-    const nextToken = res?.token || null;
-    const nextRole = res?.user?.role || roleIn;
-    const nextEmail = res?.user?.email || emailIn;
-    const nextName = res?.user?.name || null;
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved?.token && saved?.user) {
+            setToken(saved.token);
+            setUser(saved.user);
+            setHttpAuth(saved.token);
+          }
+        }
+      } catch (e) {
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
+  async function persist(nextToken, nextUser) {
     setToken(nextToken);
-    setRole(nextRole);
-    setEmail(nextEmail);
-    setName(nextName);
-
-    setHttpAuth({ token: nextToken, role: nextRole });
-
-    return res;
+    setUser(nextUser);
+    setHttpAuth(nextToken);
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ token: nextToken, user: nextUser })
+    );
   }
 
-  function logout() {
+  async function signInTeacher(email, password) {
+    const res = await AuthApi.loginTeacher(email, password);
+    await persist(res.token, res.user);
+  }
+
+  async function signInStudent(email, password) {
+    const res = await AuthApi.loginStudent(email, password);
+    await persist(res.token, res.user);
+  }
+
+  async function signOut() {
     setToken(null);
-    setRole(null);
-    setEmail(null);
-    setName(null);
-    setHttpAuth({ token: null, role: null });
+    setUser(null);
+    clearHttpAuth();
+    await AsyncStorage.removeItem(STORAGE_KEY);
   }
 
   const value = useMemo(
     () => ({
+      loading,
+      user,
       token,
       role,
-      email,
-      name,
-      login,
-      logout,
+      isTeacher: role === "teacher",
+      isStudent: role === "student",
+      signInTeacher,
+      signInStudent,
+      signOut,
     }),
-    [token, role, email, name]
+    [loading, user, token, role]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -53,6 +81,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }

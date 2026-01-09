@@ -22,20 +22,21 @@ export default function StudentCreateScreen({ navigation }) {
 
       navigation.goBack();
     } catch (e) {
-      Alert.alert("Erro", e?.message || "Falha ao criar aluno");
+      Alert.alert("Erro", e?.message || "Failed to create student");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
+    <View style={{ flex: 1, padding: 16, gap: 10 }}>
       <Text style={{ fontSize: 18, fontWeight: "700" }}>Novo Aluno</Text>
 
+      <Text style={{ fontWeight: "600" }}>Nome</Text>
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder="Nome do aluno"
+        placeholder="Ex: Maria Souza"
         style={{
           borderWidth: 1,
           borderColor: "#333",
@@ -45,10 +46,11 @@ export default function StudentCreateScreen({ navigation }) {
         }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Email</Text>
       <TextInput
         value={email}
         onChangeText={setEmail}
-        placeholder="Email do aluno (login)"
+        placeholder="Ex: maria@fiap.com"
         autoCapitalize="none"
         keyboardType="email-address"
         style={{
@@ -60,10 +62,11 @@ export default function StudentCreateScreen({ navigation }) {
         }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Senha</Text>
       <TextInput
         value={password}
         onChangeText={setPassword}
-        placeholder="Senha do aluno"
+        placeholder="Defina uma senha"
         secureTextEntry
         style={{
           borderWidth: 1,
@@ -74,10 +77,11 @@ export default function StudentCreateScreen({ navigation }) {
         }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Matrícula (opcional)</Text>
       <TextInput
         value={registration}
         onChangeText={setRegistration}
-        placeholder="Matrícula (opcional) ex: RM123456"
+        placeholder="Ex: RM123456"
         autoCapitalize="characters"
         style={{
           borderWidth: 1,
@@ -92,6 +96,7 @@ export default function StudentCreateScreen({ navigation }) {
         onPress={handleSave}
         disabled={saving}
         style={{
+          marginTop: 6,
           backgroundColor: "#111",
           paddingVertical: 12,
           borderRadius: 12,

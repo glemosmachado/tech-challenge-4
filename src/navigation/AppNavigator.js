@@ -25,7 +25,7 @@ export default function AppNavigator() {
         />
       ) : null}
 
-      {/* TEACHER: Admin + Pessoas */}
+      {/* TEACHER: Pessoas + Posts (admin) */}
       {isTeacher ? (
         <>
           <Tab.Screen
@@ -34,9 +34,9 @@ export default function AppNavigator() {
             options={{ title: "Pessoas", headerShown: false }}
           />
           <Tab.Screen
-            name="Admin"
+            name="Posts"
             component={AdminStackNavigator}
-            options={{ title: "Admin", headerShown: false }}
+            options={{ title: "Posts", headerShown: false }}
           />
         </>
       ) : null}

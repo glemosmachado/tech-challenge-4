@@ -91,8 +91,13 @@ router.put("/:id", requireTeacher, async (req, res) => {
 
 router.delete("/:id", requireTeacher, async (req, res) => {
   try {
+    if (req.user?.id && String(req.user.id) === String(req.params.id)) {
+      return res.status(403).json({ message: "You cannot delete your own account" });
+    }
+
     const deleted = await Teacher.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ message: "Teacher not found" });
+
     res.json({ ok: true });
   } catch (e) {
     console.log("teachers delete error:", e);
