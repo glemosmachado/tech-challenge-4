@@ -10,71 +10,63 @@ import {
   View,
 } from "react-native";
 import { PostsApi } from "../../api/posts";
+import { useAuth } from "../../context/AuthContext";
 
 export default function PostsListScreen({ navigation }) {
+  const { token } = useAuth();
+  const isTeacher = !!token;
+
   const [query, setQuery] = useState("");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState("");
 
-  const loadAll = useCallback(async ({ showDebug = true } = {}) => {
+  async function loadAll({ showDebug = true } = {}) {
     try {
       setMessage("");
       setLoading(true);
 
       const data = await PostsApi.list();
-      console.log("PostsApi.list() =>", data);
-
       const arr = Array.isArray(data) ? data : [];
       setPosts(arr);
 
       if (showDebug) setMessage(`debug: carregou ${arr.length} posts`);
     } catch (e) {
-      console.log("Erro list posts:", e);
-      setMessage(e?.message || "Falha ao carregar posts");
+      setMessage(e?.response?.data?.message || e?.message || "Falha ao carregar posts");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }
 
-  const runSearch = useCallback(
-    async (text) => {
-      const trimmed = text.trim();
+  async function runSearch(text) {
+    const trimmed = text.trim();
 
-      try {
-        setMessage("");
-        setLoading(true);
+    try {
+      setMessage("");
+      setLoading(true);
 
-        if (!trimmed) {
-          await loadAll();
-          return;
-        }
-
-        const data = await PostsApi.search(trimmed);
-        console.log("PostsApi.search() =>", data);
-
-        const arr = Array.isArray(data) ? data : [];
-        setPosts(arr);
-        setMessage(`debug: busca '${trimmed}' retornou ${arr.length}`);
-      } catch (e) {
-        console.log("Erro search posts:", e);
-        setMessage(e?.message || "Falha ao buscar posts");
-      } finally {
-        setLoading(false);
+      if (!trimmed) {
+        await loadAll();
+        return;
       }
-    },
-    [loadAll]
-  );
+
+      const data = await PostsApi.search(trimmed);
+      const arr = Array.isArray(data) ? data : [];
+      setPosts(arr);
+      setMessage(`debug: busca '${trimmed}' retornou ${arr.length}`);
+    } catch (e) {
+      setMessage(e?.response?.data?.message || e?.message || "Falha ao buscar posts");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function onRefresh() {
     setRefreshing(true);
     try {
-      if (query.trim()) {
-        await runSearch(query);
-      } else {
-        await loadAll({ showDebug: true });
-      }
+      if (query.trim()) await runSearch(query);
+      else await loadAll({ showDebug: true });
     } finally {
       setRefreshing(false);
     }
@@ -82,21 +74,34 @@ export default function PostsListScreen({ navigation }) {
 
   useEffect(() => {
     loadAll();
-  }, [loadAll]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      if (query.trim()) {
-        runSearch(query);
-      } else {
-        loadAll({ showDebug: false });
-      }
-    }, [query, runSearch, loadAll])
+      loadAll({ showDebug: false });
+    }, [])
   );
 
   return (
     <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: "600" }}>Posts</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Text style={{ fontSize: 18, fontWeight: "600" }}>Posts</Text>
+
+        {isTeacher ? (
+          <Pressable
+            onPress={() => navigation.navigate("PostCreate")}
+            style={{
+              borderWidth: 1,
+              borderColor: "#111",
+              paddingVertical: 8,
+              paddingHorizontal: 10,
+              borderRadius: 10,
+            }}
+          >
+            <Text style={{ fontWeight: "700" }}>Novo</Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       <TextInput
         value={query}
@@ -128,12 +133,10 @@ export default function PostsListScreen({ navigation }) {
           data={posts}
           keyExtractor={(item, idx) => item?._id || String(idx)}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           renderItem={({ item }) => (
             <Pressable
-              onPress={() => navigation.navigate("PostRead", { postId: item._id })}
+              onPress={() => navigation.navigate("PostRead", { id: item._id })}
               style={{
                 borderWidth: 1,
                 borderColor: "#222",
@@ -141,13 +144,9 @@ export default function PostsListScreen({ navigation }) {
                 padding: 12,
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                {item?.title || "Sem título"}
-              </Text>
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>{item?.title || "Sem título"}</Text>
 
-              <Text style={{ marginTop: 4, opacity: 0.8 }}>
-                Autor: {item?.author || "—"}
-              </Text>
+              <Text style={{ marginTop: 4, opacity: 0.8 }}>Autor: {item?.author || "—"}</Text>
 
               <Text style={{ marginTop: 8 }} numberOfLines={2}>
                 {item?.content || "—"}
