@@ -1,4 +1,5 @@
-import { useContext, useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -6,122 +7,144 @@ import {
   Pressable,
   RefreshControl,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { PostsApi } from "../../api/posts";
-import { AuthContext } from "../../context/AuthContext";
 
 export default function PostsAdminScreen({ navigation }) {
-  const { role } = useContext(AuthContext);
-  const canAdmin = role === "teacher";
-
+  const [query, setQuery] = useState("");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [message, setMessage] = useState("");
 
-  async function load() {
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return posts;
+    return posts.filter((p) => {
+      const t = String(p?.title || "").toLowerCase();
+      const a = String(p?.author || "").toLowerCase();
+      const c = String(p?.content || "").toLowerCase();
+      return t.includes(q) || a.includes(q) || c.includes(q);
+    });
+  }, [posts, query]);
+
+  async function loadAll({ showDebug = false } = {}) {
     try {
-      setMsg("");
+      setMessage("");
       setLoading(true);
-
       const data = await PostsApi.list();
       const arr = Array.isArray(data) ? data : [];
       setPosts(arr);
-
-      if (arr.length === 0) setMsg("Nenhum post encontrado.");
+      if (showDebug) setMessage(`debug: carregou ${arr.length} posts`);
     } catch (e) {
-      setMsg(e?.message || "Falha ao carregar posts");
+      setMessage(e?.message || "Falha ao carregar posts");
     } finally {
       setLoading(false);
     }
   }
 
+  useFocusEffect(
+    useCallback(() => {
+      loadAll();
+    }, [])
+  );
+
   async function onRefresh() {
     setRefreshing(true);
     try {
-      const data = await PostsApi.list();
-      setPosts(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setMsg(e?.message || "Falha ao atualizar posts");
+      await loadAll();
     } finally {
       setRefreshing(false);
     }
   }
 
-  function handleEdit(postId) {
-    navigation.navigate("PostsTab", {
-      screen: "PostEdit",
-      params: { postId },
-    });
-  }
-
-  function handleDelete(postId) {
-    Alert.alert(
-      "Excluir post",
-      "Tem certeza que deseja excluir este post?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await PostsApi.remove(postId);
-              await load();
-              Alert.alert("Sucesso", "Post excluído.");
-            } catch (e) {
-              Alert.alert("Erro", e?.message || "Falha ao excluir post");
-            }
-          },
+  async function handleDelete(postId) {
+    Alert.alert("Excluir", "Deseja excluir este post?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await PostsApi.remove(postId);
+            // remove da lista na hora
+            setPosts((prev) => prev.filter((p) => p?._id !== postId));
+          } catch (e) {
+            Alert.alert("Erro", e?.message || "Falha ao excluir post");
+          }
         },
-      ],
-      { cancelable: true }
-    );
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  if (!canAdmin) {
-    return (
-      <View style={{ flex: 1, padding: 16 }}>
-        <Text>Somente professores podem acessar a área administrativa.</Text>
-      </View>
-    );
+      },
+    ]);
   }
 
   return (
     <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: "600" }}>Admin - Posts</Text>
+      <Text style={{ fontSize: 18, fontWeight: "700" }}>Admin - Posts</Text>
+
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Buscar por título, autor ou conteúdo..."
+          autoCapitalize="none"
+          style={{
+            flex: 1,
+            borderWidth: 1,
+            borderColor: "#333",
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderRadius: 10,
+          }}
+        />
+
+        <Pressable
+          onPress={() => navigation.navigate("PostCreate")}
+          style={{
+            borderWidth: 1,
+            borderColor: "#333",
+            borderRadius: 10,
+            paddingHorizontal: 14,
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ fontWeight: "700" }}>Novo</Text>
+        </Pressable>
+      </View>
+
+      {message ? <Text style={{ color: "#b00020" }}>{message}</Text> : null}
 
       {loading ? (
         <View style={{ paddingTop: 24 }}>
           <ActivityIndicator />
         </View>
+      ) : filtered.length === 0 ? (
+        <Text>Nenhum post encontrado.</Text>
       ) : (
-        <>
-          {msg ? <Text style={{ color: "#b00020" }}>{msg}</Text> : null}
-
-          <FlatList
-            data={posts}
-            keyExtractor={(item, idx) => item?._id || String(idx)}
-            ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            renderItem={({ item }) => (
-              <View
+        <FlatList
+          data={filtered}
+          keyExtractor={(item, idx) => item?._id || String(idx)}
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          renderItem={({ item }) => {
+            const id = item?._id;
+            return (
+              <Pressable
+                onPress={() =>
+                  navigation.navigate("PostRead", { postId: id })
+                }
                 style={{
                   borderWidth: 1,
                   borderColor: "#222",
                   borderRadius: 12,
                   padding: 12,
-                  gap: 10,
+                  gap: 8,
                 }}
               >
-                <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                <Text style={{ fontSize: 16, fontWeight: "700" }}>
                   {item?.title || "Sem título"}
                 </Text>
 
@@ -129,37 +152,41 @@ export default function PostsAdminScreen({ navigation }) {
                   Autor: {item?.author || "—"}
                 </Text>
 
-                <View style={{ flexDirection: "row", gap: 12 }}>
+                <Text numberOfLines={2}>{item?.content || "—"}</Text>
+
+                <View style={{ flexDirection: "row", gap: 10 }}>
                   <Pressable
-                    onPress={() => handleEdit(item._id)}
+                    onPress={() => navigation.navigate("PostEdit", { postId: id })}
                     style={{
-                      paddingVertical: 8,
+                      paddingVertical: 10,
                       paddingHorizontal: 12,
-                      borderWidth: 1,
-                      borderColor: "#222",
                       borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: "#333",
                     }}
                   >
-                    <Text>Editar</Text>
+                    <Text style={{ fontWeight: "700" }}>Editar</Text>
                   </Pressable>
 
                   <Pressable
-                    onPress={() => handleDelete(item._id)}
+                    onPress={() => handleDelete(id)}
                     style={{
-                      paddingVertical: 8,
+                      paddingVertical: 10,
                       paddingHorizontal: 12,
-                      borderWidth: 1,
-                      borderColor: "#222",
                       borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: "#b00020",
                     }}
                   >
-                    <Text>Excluir</Text>
+                    <Text style={{ fontWeight: "700", color: "#b00020" }}>
+                      Excluir
+                    </Text>
                   </Pressable>
                 </View>
-              </View>
-            )}
-          />
-        </>
+              </Pressable>
+            );
+          }}
+        />
       )}
     </View>
   );

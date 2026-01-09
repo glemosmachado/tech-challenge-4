@@ -1,31 +1,57 @@
 import { http } from "./http";
 
-const StudentsApi = {
+function errMsg(e, fallback) {
+  return (
+    e?.response?.data?.message ||
+    e?.message ||
+    fallback ||
+    "Request failed"
+  );
+}
+
+export const StudentsApi = {
   async list(page = 1, limit = 10) {
-    const res = await http.get("/students", { params: { page, limit } });
-    return res.data; // { items, page, limit, total, totalPages }
+    try {
+      const res = await http.get(`/students?page=${page}&limit=${limit}`);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to list students"));
+    }
   },
 
   async getById(id) {
-    const res = await http.get(`/students/${id}`);
-    return res.data;
+    try {
+      const res = await http.get(`/students/${id}`);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to get student"));
+    }
   },
 
-  async create(input) {
-    const res = await http.post("/students", input);
-    return res.data;
+  async create(payload) {
+    try {
+      const res = await http.post("/students", payload);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to create student"));
+    }
   },
 
-  async update(id, input) {
-    const res = await http.put(`/students/${id}`, input);
-    return res.data;
+  async update(id, payload) {
+    try {
+      const res = await http.put(`/students/${id}`, payload);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to update student"));
+    }
   },
 
   async remove(id) {
-    const res = await http.delete(`/students/${id}`);
-    return res.data;
+    try {
+      const res = await http.delete(`/students/${id}`);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to delete student"));
+    }
   },
 };
-
-export { StudentsApi };
-export default StudentsApi;
