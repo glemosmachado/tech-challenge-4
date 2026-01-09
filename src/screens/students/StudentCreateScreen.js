@@ -10,19 +10,28 @@ export default function StudentCreateScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
+    const n = name.trim();
+    const e = email.trim();
+    const p = password;
+
+    if (!n || !e || !p) {
+      Alert.alert("Campos obrigatórios", "Preencha Nome, Email e Senha.");
+      return;
+    }
+
     try {
       setSaving(true);
 
       await StudentsApi.create({
-        name: name.trim(),
-        email: email.trim(),
-        password,
+        name: n,
+        email: e,
+        password: p,
         registration: registration.trim() || undefined,
       });
 
       navigation.goBack();
-    } catch (e) {
-      Alert.alert("Erro", e?.message || "Failed to create student");
+    } catch (err) {
+      Alert.alert("Erro ao criar aluno", err?.message || "Falha ao criar aluno");
     } finally {
       setSaving(false);
     }
