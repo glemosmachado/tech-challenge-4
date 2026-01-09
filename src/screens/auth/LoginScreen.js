@@ -1,18 +1,19 @@
 import { useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import { Button, Card, Hint, Input, Label, Screen } from "../../ui/components";
+import { theme } from "../../ui/theme";
 
 export default function LoginScreen() {
   const { login } = useAuth();
 
-  const [role, setRole] = useState("teacher"); 
+  const [role, setRole] = useState("teacher");
   const [email, setEmail] = useState("prof@fiap.com");
   const [password, setPassword] = useState("123456");
   const [loading, setLoading] = useState(false);
 
   function selectRole(nextRole) {
     setRole(nextRole);
-
     if (nextRole === "teacher") {
       setEmail("prof@fiap.com");
       setPassword("123456");
@@ -34,102 +35,48 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, justifyContent: "center", gap: 12 }}>
-      <Text style={{ fontSize: 22, fontWeight: "800" }}>Login</Text>
+    <Screen title="Acesso">
+      <Card style={{ gap: 12 }}>
+        <Hint style={{ color: theme.colors.muted }}>
+          Entre como professor ou aluno para acessar o sistema.
+        </Hint>
 
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <Pressable
-          onPress={() => selectRole("teacher")}
-          style={{
-            flex: 1,
-            paddingVertical: 10,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: "#222",
-            backgroundColor: role === "teacher" ? "#222" : "transparent",
-          }}
-        >
-          <Text
-            style={{
-              textAlign: "center",
-              color: role === "teacher" ? "#fff" : "#222",
-              fontWeight: "700",
-            }}
-          >
-            Professor
-          </Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <Button
+              title="Professor"
+              variant={role === "teacher" ? "primary" : "secondary"}
+              onPress={() => selectRole("teacher")}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              title="Aluno"
+              variant={role === "student" ? "primary" : "secondary"}
+              onPress={() => selectRole("student")}
+            />
+          </View>
+        </View>
 
-        <Pressable
-          onPress={() => selectRole("student")}
-          style={{
-            flex: 1,
-            paddingVertical: 10,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: "#222",
-            backgroundColor: role === "student" ? "#222" : "transparent",
-          }}
-        >
-          <Text
-            style={{
-              textAlign: "center",
-              color: role === "student" ? "#fff" : "#222",
-              fontWeight: "700",
-            }}
-          >
-            Aluno
-          </Text>
-        </Pressable>
-      </View>
+        <Label>Email</Label>
+        <Input
+          value={email}
+          onChangeText={setEmail}
+          placeholder="seuemail@fiap.com"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
 
-      <Text style={{ fontWeight: "600" }}>Email</Text>
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Seu email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        style={{
-          borderWidth: 1,
-          borderColor: "#333",
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 10,
-        }}
-      />
+        <Label>Senha</Label>
+        <Input
+          value={password}
+          onChangeText={setPassword}
+          placeholder="sua senha"
+          secureTextEntry
+        />
 
-      <Text style={{ fontWeight: "600" }}>Senha</Text>
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Sua senha"
-        secureTextEntry
-        style={{
-          borderWidth: 1,
-          borderColor: "#333",
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 10,
-        }}
-      />
-
-      <Pressable
-        onPress={onSubmit}
-        disabled={loading}
-        style={{
-          marginTop: 6,
-          backgroundColor: "#111",
-          paddingVertical: 12,
-          borderRadius: 12,
-          alignItems: "center",
-          opacity: loading ? 0.6 : 1,
-        }}
-      >
-        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-          {loading ? "Entrando..." : "Entrar"}
-        </Text>
-      </Pressable>
-    </View>
+        <Button title={loading ? "Entrando..." : "Entrar"} onPress={onSubmit} disabled={loading} />
+      </Card>
+    </Screen>
   );
 }

@@ -10,20 +10,59 @@ import StudentCreateScreen from "../screens/students/StudentCreateScreen";
 import StudentEditScreen from "../screens/students/StudentEditScreen";
 import StudentsListScreen from "../screens/students/StudentsListScreen";
 
+import { theme as ui } from "../ui/theme";
+
 const Stack = createNativeStackNavigator();
 
 export default function PeopleStackNavigator() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="PeopleHome" component={PeopleHomeScreen} options={{ title: "Pessoas" }} />
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: ui.colors.bg },
+        headerTintColor: ui.colors.text,
+        headerTitleStyle: { fontWeight: "900" },
+        contentStyle: { backgroundColor: ui.colors.bg },
+      }}
+    >
+      <Stack.Screen
+        name="PeopleHome"
+        component={PeopleHomeScreen}
+        options={{ title: "Pessoas" }}
+      />
 
-      <Stack.Screen name="TeachersList" component={TeachersListScreen} options={{ title: "Professores" }} />
-      <Stack.Screen name="TeacherCreate" component={TeacherCreateScreen} options={{ title: "Novo Professor" }} />
-      <Stack.Screen name="TeacherEdit" component={TeacherEditScreen} options={{ title: "Editar Professor" }} />
+      {/* Teachers */}
+      <Stack.Screen
+        name="TeachersList"
+        component={TeachersListScreen}
+        options={{ title: "Professores" }}
+      />
+      <Stack.Screen
+        name="TeacherCreate"
+        component={TeacherCreateScreen}
+        options={{ title: "Novo professor" }}
+      />
+      <Stack.Screen
+        name="TeacherEdit"
+        component={TeacherEditScreen}
+        options={{ title: "Editar professor" }}
+      />
 
-      <Stack.Screen name="StudentsList" component={StudentsListScreen} options={{ title: "Alunos" }} />
-      <Stack.Screen name="StudentCreate" component={StudentCreateScreen} options={{ title: "Novo Aluno" }} />
-      <Stack.Screen name="StudentEdit" component={StudentEditScreen} options={{ title: "Editar Aluno" }} />
+      {/* Students */}
+      <Stack.Screen
+        name="StudentsList"
+        component={StudentsListScreen}
+        options={{ title: "Alunos" }}
+      />
+      <Stack.Screen
+        name="StudentCreate"
+        component={StudentCreateScreen}
+        options={{ title: "Novo aluno" }}
+      />
+      <Stack.Screen
+        name="StudentEdit"
+        component={StudentEditScreen}
+        options={{ title: "Editar aluno" }}
+      />
     </Stack.Navigator>
   );
 }

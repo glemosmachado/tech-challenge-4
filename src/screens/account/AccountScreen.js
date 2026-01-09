@@ -1,13 +1,15 @@
-import { Alert, Pressable, Text, View } from "react-native";
+import { Alert, Text } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import { Button, Card, Divider, Hint, Label, Screen } from "../../ui/components";
+import { theme } from "../../ui/theme";
 
 export default function AccountScreen() {
   const { user, role, signOut } = useAuth();
 
   const email = user?.email || "—";
   const name = user?.name || "—";
-  const effectiveRole = role || user?.role || "—";
   const id = user?.id || "—";
+  const effectiveRole = role || user?.role || "—";
 
   function handleLogout() {
     Alert.alert("Sair", "Quer sair da conta?", [
@@ -17,38 +19,24 @@ export default function AccountScreen() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 14 }}>
-      <Text style={{ fontSize: 22, fontWeight: "700" }}>Conta</Text>
-
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#222",
-          borderRadius: 12,
-          padding: 14,
-          gap: 8,
-        }}
-      >
-        <Text style={{ fontSize: 16, fontWeight: "700" }}>Dados</Text>
-        <Text>ID: {id}</Text>
-        <Text>Nome: {name}</Text>
-        <Text>Email: {email}</Text>
-        <Text>Tipo: {effectiveRole}</Text>
-      </View>
-
-      <Pressable
-        onPress={handleLogout}
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 12,
-          borderRadius: 12,
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-          Sair
+    <Screen title="Conta">
+      <Card style={{ gap: 10 }}>
+        <Label>Identidade</Label>
+        <Text style={{ color: theme.colors.text, fontSize: theme.type.h2, fontWeight: "800" }}>
+          {name}
         </Text>
-      </Pressable>
-    </View>
+        <Hint>{email}</Hint>
+
+        <Divider />
+
+        <Label>Detalhes</Label>
+        <Hint>ID: {id}</Hint>
+        <Hint>Tipo: {effectiveRole}</Hint>
+
+        <Divider />
+
+        <Button title="Sair" variant="danger" onPress={handleLogout} />
+      </Card>
+    </Screen>
   );
 }

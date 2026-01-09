@@ -1,32 +1,31 @@
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { DarkTheme as NavDarkTheme, NavigationContainer } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../context/AuthContext";
-
-import LoginScreen from "../screens/auth/LoginScreen";
+import { theme } from "../ui/theme";
 import AppNavigator from "./AppNavigator";
+import AuthNavigator from "./AuthNavigator";
 
-const Stack = createNativeStackNavigator();
+const navTheme = {
+  ...NavDarkTheme,
+  colors: {
+    ...NavDarkTheme.colors,
+    primary: theme.colors.accent,
+    background: theme.colors.bg,
+    card: theme.colors.surface,
+    text: theme.colors.text,
+    border: theme.colors.border,
+    notification: theme.colors.accent,
+  },
+};
 
 export default function RootNavigator() {
-  const { token } = useAuth();
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        {!token ? (
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ title: "Login" }}
-          />
-        ) : (
-          <Stack.Screen
-            name="App"
-            component={AppNavigator}
-            options={{ headerShown: false }}
-          />
-        )}
-      </Stack.Navigator>
+    <NavigationContainer theme={navTheme}>
+      <StatusBar style="light" />
+      {isLoggedIn ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }
