@@ -1,204 +1,70 @@
-import { Platform } from "react-native";
-
-export const colors = {
-  bg: "#0B0B10",
-  surface: "#12121A",
-  surface2: "#171726",
-  border: "#26263A",
-
-  text: "#F2F3F7",
-  muted: "#A7A9B8",
-  placeholder: "#6F7286",
-
-  purple: "#9B6DFF",
-  orange: "#FF7A18",
-
-  danger: "#FF3B5C",
-  success: "#2ED47A",
-};
-
-export const spacing = {
-  xs: 6,
-  sm: 10,
-  md: 14,
-  lg: 18,
-  xl: 24,
-  xxl: 32,
-};
-
-export const radius = {
-  sm: 10,
-  md: 14,
-  lg: 18,
-  xl: 24,
-};
-
-export const typography = {
-  h1: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: 0.2,
-    color: colors.text,
+const theme = {
+  colors: {
+    bg: "#07060b",
+    bg2: "#0d0b14",
+    card: "#12111a",
+    card2: "#171622",
+    border: "rgba(255,255,255,0.10)",
+    text: "rgba(255,255,255,0.92)",
+    muted: "rgba(255,255,255,0.62)",
+    subtle: "rgba(255,255,255,0.42)",
+    danger: "#ff3b5c",
+    success: "#38d68b",
+    accent: "#9b87ff", // roxo
+    accent2: "#c2b7ff",
   },
-  h2: {
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: 0.2,
-    color: colors.text,
-  },
-  h3: {
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: 0.1,
-    color: colors.text,
-  },
-  body: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.text,
-  },
-  muted: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.muted,
-  },
-  small: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: colors.muted,
-  },
-};
 
-export const shadow = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
+  spacing: {
+    xs: 6,
+    sm: 10,
+    md: 14,
+    lg: 18,
+    xl: 24,
   },
-  android: {
-    elevation: 8,
-  },
-  default: {},
-});
 
-export const theme = {
-  colors,
-  spacing,
-  radius,
-  typography,
-  shadow,
+  radius: {
+    sm: 12,
+    md: 16,
+    lg: 22,
+    pill: 999,
+  },
+
+  screen: {
+    padding: 18,
+    gap: 12,
+    maxWidth: 900,
+  },
 
   nav: {
     screen: {
-      headerStyle: { backgroundColor: colors.bg },
-      headerTintColor: colors.text,
-      headerTitleStyle: {
-        color: colors.text,
-        fontWeight: "800",
-      },
+      headerStyle: { backgroundColor: "#07060b" },
+      headerTintColor: "rgba(255,255,255,0.92)",
+      headerTitleStyle: { color: "rgba(255,255,255,0.92)" },
       headerShadowVisible: false,
-      contentStyle: { backgroundColor: colors.bg },
-
+    },
+    tab: {
       tabBarStyle: {
-        backgroundColor: colors.bg,
-        borderTopColor: colors.border,
+        backgroundColor: "#07060b",
+        borderTopColor: "rgba(255,255,255,0.10)",
       },
-      tabBarActiveTintColor: colors.purple,
-      tabBarInactiveTintColor: colors.muted,
+      tabBarActiveTintColor: "#9b87ff",
+      tabBarInactiveTintColor: "rgba(255,255,255,0.45)",
+      tabBarLabelStyle: { paddingBottom: 4 },
     },
   },
 
-  navigation: {
-    screen: {
-      headerStyle: { backgroundColor: colors.bg },
-      headerTintColor: colors.text,
-      headerTitleStyle: {
-        color: colors.text,
-        fontWeight: "800",
-      },
-      headerShadowVisible: false,
-      contentStyle: { backgroundColor: colors.bg },
-
-      tabBarStyle: {
-        backgroundColor: colors.bg,
-        borderTopColor: colors.border,
-      },
-      tabBarActiveTintColor: colors.purple,
-      tabBarInactiveTintColor: colors.muted,
-    },
-  },
-
-  components: {
-    screen: {
-      flex: 1,
-      backgroundColor: colors.bg,
-      padding: spacing.lg,
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderWidth: 1,
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-    },
-    input: {
-      backgroundColor: colors.surface2,
-      borderColor: colors.border,
-      borderWidth: 1,
-      borderRadius: radius.lg,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      color: colors.text,
-    },
-    inputMeta: {
-      placeholderTextColor: colors.placeholder,
-      selectionColor: colors.purple,
-    },
-    buttonPrimary: {
-      backgroundColor: colors.purple,
-      borderRadius: radius.xl,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xl,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    buttonPrimaryText: {
-      color: "#0B0B10",
-      fontWeight: "900",
-      fontSize: 16,
-    },
-    buttonSecondary: {
-      backgroundColor: "transparent",
-      borderRadius: radius.xl,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xl,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    buttonSecondaryText: {
-      color: colors.text,
-      fontWeight: "800",
-      fontSize: 16,
-    },
-    buttonDanger: {
-      backgroundColor: "transparent",
-      borderRadius: radius.xl,
-      borderWidth: 1,
-      borderColor: colors.danger,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xl,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    buttonDangerText: {
-      color: colors.danger,
-      fontWeight: "900",
-      fontSize: 16,
+  navigationTheme: {
+    dark: true,
+    colors: {
+      primary: "#9b87ff",
+      background: "#07060b",
+      card: "#07060b",
+      text: "rgba(255,255,255,0.92)",
+      border: "rgba(255,255,255,0.10)",
+      notification: "#9b87ff",
     },
   },
 };
 
+export { theme };
 export default theme;
