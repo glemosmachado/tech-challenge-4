@@ -13,7 +13,7 @@ export default function AdminStackNavigator() {
       <Stack.Screen
         name="PostsAdmin"
         component={PostsAdminScreen}
-        options={{ title: "Admin - Posts" }}
+        options={{ title: "Posts" }}
       />
       <Stack.Screen
         name="PostRead"

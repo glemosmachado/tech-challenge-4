@@ -1,23 +1,23 @@
 import { useState } from "react";
-import { Alert, Button, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
 export default function LoginScreen() {
   const { login } = useAuth();
 
   const [role, setRole] = useState("teacher"); 
-  const [email, setEmail] = useState(role === "teacher" ? "prof@fiap.com" : "aluno@fiap.com");
-  const [password, setPassword] = useState(role === "teacher" ? "123456" : "123456");
+  const [email, setEmail] = useState("prof@fiap.com");
+  const [password, setPassword] = useState("123456");
   const [loading, setLoading] = useState(false);
 
   function selectRole(nextRole) {
     setRole(nextRole);
-   
+
     if (nextRole === "teacher") {
       setEmail("prof@fiap.com");
       setPassword("123456");
     } else {
-      setEmail("aluno@fiap.com");
+      setEmail("alunoteste@fiap.com");
       setPassword("123456");
     }
   }
@@ -26,12 +26,8 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       await login({ role, email: email.trim(), password });
-      Alert.alert("Sucesso", `Logado como ${role === "teacher" ? "professor" : "aluno"}.`);
     } catch (e) {
-      Alert.alert(
-        "Erro",
-        e?.response?.data?.message || e?.message || "Falha ao fazer login"
-      );
+      Alert.alert("Erro", e?.message || "Falha ao fazer login");
     } finally {
       setLoading(false);
     }
@@ -53,7 +49,13 @@ export default function LoginScreen() {
             backgroundColor: role === "teacher" ? "#222" : "transparent",
           }}
         >
-          <Text style={{ textAlign: "center", color: role === "teacher" ? "#fff" : "#222", fontWeight: "700" }}>
+          <Text
+            style={{
+              textAlign: "center",
+              color: role === "teacher" ? "#fff" : "#222",
+              fontWeight: "700",
+            }}
+          >
             Professor
           </Text>
         </Pressable>
@@ -69,16 +71,23 @@ export default function LoginScreen() {
             backgroundColor: role === "student" ? "#222" : "transparent",
           }}
         >
-          <Text style={{ textAlign: "center", color: role === "student" ? "#fff" : "#222", fontWeight: "700" }}>
+          <Text
+            style={{
+              textAlign: "center",
+              color: role === "student" ? "#fff" : "#222",
+              fontWeight: "700",
+            }}
+          >
             Aluno
           </Text>
         </Pressable>
       </View>
 
+      <Text style={{ fontWeight: "600" }}>Email</Text>
       <TextInput
         value={email}
         onChangeText={setEmail}
-        placeholder="Email"
+        placeholder="Seu email"
         autoCapitalize="none"
         keyboardType="email-address"
         style={{
@@ -90,10 +99,11 @@ export default function LoginScreen() {
         }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Senha</Text>
       <TextInput
         value={password}
         onChangeText={setPassword}
-        placeholder="Senha"
+        placeholder="Sua senha"
         secureTextEntry
         style={{
           borderWidth: 1,
@@ -104,7 +114,22 @@ export default function LoginScreen() {
         }}
       />
 
-      <Button title={loading ? "Entrando..." : "Entrar"} onPress={onSubmit} disabled={loading} />
+      <Pressable
+        onPress={onSubmit}
+        disabled={loading}
+        style={{
+          marginTop: 6,
+          backgroundColor: "#111",
+          paddingVertical: 12,
+          borderRadius: 12,
+          alignItems: "center",
+          opacity: loading ? 0.6 : 1,
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+          {loading ? "Entrando..." : "Entrar"}
+        </Text>
+      </Pressable>
     </View>
   );
 }

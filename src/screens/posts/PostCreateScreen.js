@@ -1,29 +1,14 @@
-import { useContext, useState } from "react";
-import { Alert, Button, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import { Alert, Pressable, Text, TextInput, View } from "react-native";
 import { PostsApi } from "../../api/posts";
-import { AuthContext } from "../../context/AuthContext";
 
 export default function PostCreateScreen({ navigation }) {
-  const { role } = useContext(AuthContext);
-
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const canEdit = role === "teacher";
-
   async function handleSave() {
-    if (!canEdit) {
-      Alert.alert("Acesso negado", "Somente professores podem criar posts.");
-      return;
-    }
-
-    if (!title.trim() || !author.trim() || !content.trim()) {
-      Alert.alert("Campos obrigatórios", "Preencha título, autor e conteúdo.");
-      return;
-    }
-
     try {
       setSaving(true);
 
@@ -33,7 +18,6 @@ export default function PostCreateScreen({ navigation }) {
         content: content.trim(),
       });
 
-      Alert.alert("Sucesso", "Post criado.");
       navigation.goBack();
     } catch (e) {
       Alert.alert("Erro", e?.message || "Falha ao criar post");
@@ -43,55 +27,70 @@ export default function PostCreateScreen({ navigation }) {
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: "600" }}>Novo post</Text>
+    <View style={{ flex: 1, padding: 16, gap: 10 }}>
+      <Text style={{ fontSize: 18, fontWeight: "700" }}>Novo Post</Text>
 
+      <Text style={{ fontWeight: "600" }}>Título</Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
-        placeholder="Título"
-        autoCapitalize="sentences"
+        placeholder="Ex: Aula 1 - Introdução"
         style={{
           borderWidth: 1,
           borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
           borderRadius: 10,
-          padding: 10,
         }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Autor</Text>
       <TextInput
         value={author}
         onChangeText={setAuthor}
-        placeholder="Autor"
-        autoCapitalize="words"
+        placeholder="Ex: Prof. João"
         style={{
           borderWidth: 1,
           borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
           borderRadius: 10,
-          padding: 10,
         }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Conteúdo</Text>
       <TextInput
         value={content}
         onChangeText={setContent}
-        placeholder="Conteúdo"
+        placeholder="Escreva o conteúdo do post..."
         multiline
         style={{
           borderWidth: 1,
           borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
           borderRadius: 10,
-          padding: 10,
           minHeight: 160,
           textAlignVertical: "top",
         }}
       />
 
-      <Button
-        title={saving ? "Salvando..." : "Criar"}
+      <Pressable
         onPress={handleSave}
         disabled={saving}
-      />
+        style={{
+          marginTop: 6,
+          backgroundColor: "#111",
+          paddingVertical: 12,
+          borderRadius: 12,
+          alignItems: "center",
+          opacity: saving ? 0.6 : 1,
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+          Salvar
+        </Text>
+      </Pressable>
     </View>
   );
 }

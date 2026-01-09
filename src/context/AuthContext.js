@@ -38,20 +38,25 @@ export function AuthProvider({ children }) {
     setToken(nextToken);
     setUser(nextUser);
     setHttpAuth(nextToken);
+
     await AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ token: nextToken, user: nextUser })
     );
   }
 
-  async function signInTeacher(email, password) {
-    const res = await AuthApi.loginTeacher(email, password);
+  async function login({ role: roleIn, email, password }) {
+    const res = await AuthApi.login(roleIn, email, password);
     await persist(res.token, res.user);
+    return res;
+  }
+
+  async function signInTeacher(email, password) {
+    return login({ role: "teacher", email, password });
   }
 
   async function signInStudent(email, password) {
-    const res = await AuthApi.loginStudent(email, password);
-    await persist(res.token, res.user);
+    return login({ role: "student", email, password });
   }
 
   async function signOut() {
@@ -69,6 +74,7 @@ export function AuthProvider({ children }) {
       role,
       isTeacher: role === "teacher",
       isStudent: role === "student",
+      login, 
       signInTeacher,
       signInStudent,
       signOut,

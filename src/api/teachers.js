@@ -1,31 +1,52 @@
 import { http } from "./http";
 
-const TeachersApi = {
+function errMsg(e, fallback) {
+  return e?.response?.data?.message || e?.message || fallback || "Request failed";
+}
+
+export const TeachersApi = {
   async list(page = 1, limit = 10) {
-    const res = await http.get("/teachers", { params: { page, limit } });
-    return res.data;
+    try {
+      const res = await http.get(`/teachers?page=${page}&limit=${limit}`);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to list teachers"));
+    }
   },
 
   async getById(id) {
-    const res = await http.get(`/teachers/${id}`);
-    return res.data;
+    try {
+      const res = await http.get(`/teachers/${id}`);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to get teacher"));
+    }
   },
 
-  async create(input) {
-    const res = await http.post("/teachers", input);
-    return res.data;
+  async create(payload) {
+    try {
+      const res = await http.post("/teachers", payload);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to create teacher"));
+    }
   },
 
-  async update(id, input) {
-    const res = await http.put(`/teachers/${id}`, input);
-    return res.data;
+  async update(id, payload) {
+    try {
+      const res = await http.put(`/teachers/${id}`, payload);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to update teacher"));
+    }
   },
 
   async remove(id) {
-    const res = await http.delete(`/teachers/${id}`);
-    return res.data;
+    try {
+      const res = await http.delete(`/teachers/${id}`);
+      return res.data;
+    } catch (e) {
+      throw new Error(errMsg(e, "Failed to delete teacher"));
+    }
   },
 };
-
-export { TeachersApi };
-export default TeachersApi;

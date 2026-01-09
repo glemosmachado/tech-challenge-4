@@ -1,13 +1,9 @@
-import { useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Button, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from "react-native";
 import { PostsApi } from "../../api/posts";
-import { AuthContext } from "../../context/AuthContext";
 
 export default function PostEditScreen({ route, navigation }) {
-  const { role } = useContext(AuthContext);
-  const { postId } = route.params;
-
-  const canEdit = role === "teacher";
+  const { postId } = route.params || {};
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -16,37 +12,27 @@ export default function PostEditScreen({ route, navigation }) {
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        const post = await PostsApi.get(postId);
+  async function load() {
+    try {
+      setLoading(true);
+      const data = await PostsApi.getById(postId);
 
-        setTitle(post?.title || "");
-        setAuthor(post?.author || "");
-        setContent(post?.content || "");
-      } catch (e) {
-        Alert.alert("Erro", e?.message || "Falha ao carregar post");
-        navigation.goBack();
-      } finally {
-        setLoading(false);
-      }
+      setTitle(data?.title || "");
+      setAuthor(data?.author || "");
+      setContent(data?.content || "");
+    } catch (e) {
+      Alert.alert("Erro", e?.message || "Falha ao carregar post");
+      navigation.goBack();
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     load();
-  }, [postId, navigation]);
+  }, [postId]);
 
   async function handleSave() {
-    if (!canEdit) {
-      Alert.alert("Acesso negado", "Somente professores podem editar posts.");
-      return;
-    }
-
-    if (!title.trim() || !author.trim() || !content.trim()) {
-      Alert.alert("Campos obrigatórios", "Preencha título, autor e conteúdo.");
-      return;
-    }
-
     try {
       setSaving(true);
 
@@ -56,10 +42,9 @@ export default function PostEditScreen({ route, navigation }) {
         content: content.trim(),
       });
 
-      Alert.alert("Sucesso", "Post atualizado.");
       navigation.goBack();
     } catch (e) {
-      Alert.alert("Erro", e?.message || "Falha ao atualizar post");
+      Alert.alert("Erro", e?.message || "Falha ao salvar post");
     } finally {
       setSaving(false);
     }
@@ -74,25 +59,38 @@ export default function PostEditScreen({ route, navigation }) {
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: "600" }}>Editar post</Text>
+    <View style={{ flex: 1, padding: 16, gap: 10 }}>
+      <Text style={{ fontSize: 18, fontWeight: "700" }}>Editar Post</Text>
 
+      <Text style={{ fontWeight: "600" }}>Título</Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
         placeholder="Título"
-        autoCapitalize="sentences"
-        style={{ borderWidth: 1, borderColor: "#333", borderRadius: 10, padding: 10 }}
+        style={{
+          borderWidth: 1,
+          borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 10,
+        }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Autor</Text>
       <TextInput
         value={author}
         onChangeText={setAuthor}
         placeholder="Autor"
-        autoCapitalize="words"
-        style={{ borderWidth: 1, borderColor: "#333", borderRadius: 10, padding: 10 }}
+        style={{
+          borderWidth: 1,
+          borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 10,
+        }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Conteúdo</Text>
       <TextInput
         value={content}
         onChangeText={setContent}
@@ -101,18 +99,30 @@ export default function PostEditScreen({ route, navigation }) {
         style={{
           borderWidth: 1,
           borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
           borderRadius: 10,
-          padding: 10,
           minHeight: 160,
           textAlignVertical: "top",
         }}
       />
 
-      <Button
-        title={saving ? "Salvando..." : "Salvar alterações"}
+      <Pressable
         onPress={handleSave}
         disabled={saving}
-      />
+        style={{
+          marginTop: 6,
+          backgroundColor: "#111",
+          paddingVertical: 12,
+          borderRadius: 12,
+          alignItems: "center",
+          opacity: saving ? 0.6 : 1,
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+          Salvar
+        </Text>
+      </Pressable>
     </View>
   );
 }

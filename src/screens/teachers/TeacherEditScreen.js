@@ -3,14 +3,16 @@ import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from "reac
 import { TeachersApi } from "../../api/teachers";
 
 export default function TeacherEditScreen({ route, navigation }) {
-  const { id } = route.params;
+  const { id } = route.params || {};
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
+  const [area, setArea] = useState("");
   const [email, setEmail] = useState("");
-  const [department, setDepartment] = useState("");
+
+  const [password, setPassword] = useState("");
 
   async function load() {
     try {
@@ -19,34 +21,13 @@ export default function TeacherEditScreen({ route, navigation }) {
 
       setName(data?.name || "");
       setEmail(data?.email || "");
-      setDepartment(data?.department || "");
+      setArea(data?.area || "");
+      setPassword("");
     } catch (e) {
-      Alert.alert("Erro", e?.response?.data?.message || e?.message || "Falha ao carregar professor");
+      Alert.alert("Erro", e?.message || "Falha ao carregar professor");
       navigation.goBack();
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function onSave() {
-    if (!name.trim() || !email.trim()) {
-      Alert.alert("Validação", "Nome e email são obrigatórios.");
-      return;
-    }
-
-    try {
-      setSaving(true);
-      await TeachersApi.update(id, {
-        name: name.trim(),
-        email: email.trim(),
-        department: department.trim() || undefined,
-      });
-
-      navigation.goBack();
-    } catch (e) {
-      Alert.alert("Erro", e?.response?.data?.message || e?.message || "Falha ao salvar professor");
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -54,57 +35,114 @@ export default function TeacherEditScreen({ route, navigation }) {
     load();
   }, [id]);
 
+  async function handleSave() {
+    try {
+      setSaving(true);
+
+      const payload = {
+        name: name.trim(),
+        email: email.trim(),
+        area: area.trim(),
+      };
+
+      if (password.trim()) payload.password = password;
+
+      await TeachersApi.update(id, payload);
+
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert("Erro", e?.message || "Falha ao salvar professor");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ flex: 1, padding: 16, justifyContent: "center" }}>
         <ActivityIndicator />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
+    <View style={{ flex: 1, padding: 16, gap: 10 }}>
       <Text style={{ fontSize: 18, fontWeight: "700" }}>Editar Professor</Text>
 
+      <Text style={{ fontWeight: "600" }}>Nome</Text>
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder="Nome"
-        style={{ borderWidth: 1, borderColor: "#333", padding: 12, borderRadius: 10 }}
+        placeholder="Ex: João Silva"
+        style={{
+          borderWidth: 1,
+          borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 10,
+        }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Email</Text>
       <TextInput
         value={email}
         onChangeText={setEmail}
-        placeholder="Email"
+        placeholder="Ex: joao@fiap.com"
         autoCapitalize="none"
         keyboardType="email-address"
-        style={{ borderWidth: 1, borderColor: "#333", padding: 12, borderRadius: 10 }}
+        style={{
+          borderWidth: 1,
+          borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 10,
+        }}
       />
 
+      <Text style={{ fontWeight: "600" }}>Área (opcional)</Text>
       <TextInput
-        value={department}
-        onChangeText={setDepartment}
-        placeholder="Departamento (opcional)"
-        style={{ borderWidth: 1, borderColor: "#333", padding: 12, borderRadius: 10 }}
+        value={area}
+        onChangeText={setArea}
+        placeholder="Ex: Matemática, TI, História..."
+        style={{
+          borderWidth: 1,
+          borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 10,
+        }}
+      />
+
+      <Text style={{ fontWeight: "600" }}>Nova senha (opcional)</Text>
+      <TextInput
+        value={password}
+        onChangeText={setPassword}
+        placeholder="Preencha só se quiser trocar"
+        secureTextEntry
+        style={{
+          borderWidth: 1,
+          borderColor: "#333",
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 10,
+        }}
       />
 
       <Pressable
-        onPress={onSave}
+        onPress={handleSave}
         disabled={saving}
         style={{
+          marginTop: 6,
           backgroundColor: "#111",
           paddingVertical: 12,
-          borderRadius: 10,
+          borderRadius: 12,
           alignItems: "center",
-          opacity: saving ? 0.7 : 1,
+          opacity: saving ? 0.6 : 1,
         }}
       >
-        {saving ? (
-          <ActivityIndicator />
-        ) : (
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Salvar</Text>
-        )}
+        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+          Salvar
+        </Text>
       </Pressable>
     </View>
   );

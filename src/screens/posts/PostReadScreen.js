@@ -3,36 +3,24 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { PostsApi } from "../../api/posts";
 
 export default function PostReadScreen({ route }) {
-  const id = route?.params?.id || route?.params?._id || route?.params?.postId;
+  const { postId } = route.params || {};
 
-  const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [post, setPost] = useState(null);
+
+  async function load() {
+    try {
+      setLoading(true);
+      const data = await PostsApi.getById(postId);
+      setPost(data || null);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    (async () => {
-      try {
-        setErrorMsg("");
-        setLoading(true);
-
-        if (!id) {
-          setErrorMsg("Post inválido: id não foi enviado na navegação.");
-          return;
-        }
-
-        const data = await PostsApi.get(id);
-        setPost(data);
-      } catch (e) {
-        const msg =
-          e?.response?.data?.message ||
-          e?.message ||
-          "Falha ao carregar post";
-        setErrorMsg(msg);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
+    load();
+  }, [postId]);
 
   if (loading) {
     return (
@@ -42,10 +30,10 @@ export default function PostReadScreen({ route }) {
     );
   }
 
-  if (errorMsg) {
+  if (!post) {
     return (
       <View style={{ flex: 1, padding: 16 }}>
-        <Text style={{ color: "#b00020" }}>{errorMsg}</Text>
+        <Text>Post não encontrado.</Text>
       </View>
     );
   }
@@ -56,13 +44,18 @@ export default function PostReadScreen({ route }) {
         {post?.title || "Sem título"}
       </Text>
 
-      <Text style={{ opacity: 0.8 }}>
-        Autor: {post?.author || "—"}
-      </Text>
+      <Text style={{ opacity: 0.8 }}>Autor: {post?.author || "—"}</Text>
 
-      <Text style={{ marginTop: 10 }}>
-        {post?.content || "—"}
-      </Text>
+      <View
+        style={{
+          borderWidth: 1,
+          borderColor: "#222",
+          borderRadius: 12,
+          padding: 12,
+        }}
+      >
+        <Text style={{ fontSize: 16 }}>{post?.content || "—"}</Text>
+      </View>
     </View>
   );
 }
