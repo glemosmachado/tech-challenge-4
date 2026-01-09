@@ -6,20 +6,22 @@ import PostsAdminScreen from "../screens/posts/PostsAdminScreen";
 import PeopleStackNavigator from "./PeopleStackNavigator";
 import PostsStackNavigator from "./PostsStackNavigator";
 
-import LoginScreen from "../screens/auth/LoginScreen";
-
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
-  const { token, logout } = useAuth();
-  const isTeacher = !!token;
+  const { role, logout } = useAuth();
+  const isTeacher = role === "teacher";
+  const isStudent = role === "student";
 
   return (
-    <Tab.Navigator key={isTeacher ? "teacher-tabs" : "guest-tabs"}>
+    <Tab.Navigator>
       <Tab.Screen
         name="PostsTab"
         component={PostsStackNavigator}
-        options={{ title: "Posts", headerShown: false }}
+        options={{
+          title: "Posts",
+          headerShown: false,
+        }}
       />
 
       {isTeacher ? (
@@ -36,23 +38,37 @@ export default function AppNavigator() {
             options={{
               title: "Admin",
               headerRight: () => (
-                <Pressable
-                  onPress={logout}
-                  style={{ paddingHorizontal: 12, paddingVertical: 6 }}
-                >
+                <Pressable onPress={logout} style={{ paddingHorizontal: 12, paddingVertical: 6 }}>
                   <Text style={{ fontWeight: "800" }}>Sair</Text>
                 </Pressable>
               ),
             }}
           />
         </>
-      ) : (
+      ) : null}
+
+      {isStudent ? (
         <Tab.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ title: "Login" }}
+          name="Conta"
+          component={DummyAccountScreen}
+          options={{
+            title: "Conta",
+            headerRight: () => (
+              <Pressable onPress={logout} style={{ paddingHorizontal: 12, paddingVertical: 6 }}>
+                <Text style={{ fontWeight: "800" }}>Sair</Text>
+              </Pressable>
+            ),
+          }}
         />
-      )}
+      ) : null}
     </Tab.Navigator>
+  );
+}
+
+function DummyAccountScreen() {
+  return (
+    <Text style={{ padding: 16 }}>
+      Logado como aluno. Você pode visualizar posts, mas não pode criar/editar/excluir.
+    </Text>
   );
 }

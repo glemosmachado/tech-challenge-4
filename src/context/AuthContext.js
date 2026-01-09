@@ -1,68 +1,39 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { AuthApi } from "../api/auth";
 import { setHttpAuth } from "../api/http";
 
-const AuthContext = createContext(null);
-
-const STORAGE_KEY = "TC4_AUTH_V1";
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
-  const [role, setRole] = useState(null); // "teacher" | "student" | null
+  const [role, setRole] = useState(null);
   const [email, setEmail] = useState(null);
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [name, setName] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const t = parsed?.token ?? null;
-          const r = parsed?.role ?? null;
-          const e = parsed?.email ?? null;
+  async function login({ role: roleIn, email: emailIn, password }) {
+    const res = await AuthApi.login(roleIn, emailIn, password);
 
-          setToken(t);
-          setRole(r);
-          setEmail(e);
-
-          setHttpAuth({ token: t, role: r });
-        } else {
-          setHttpAuth({ token: null, role: null });
-        }
-      } finally {
-        setIsBootstrapping(false);
-      }
-    })();
-  }, []);
-
-  async function loginTeacher(userEmail, password) {
-    const res = await AuthApi.login(userEmail, password);
-
-    const nextToken = res?.token;
-    const nextRole = "teacher";
-    const nextEmail = res?.user?.email || userEmail;
+    const nextToken = res?.token || null;
+    const nextRole = res?.user?.role || roleIn;
+    const nextEmail = res?.user?.email || emailIn;
+    const nextName = res?.user?.name || null;
 
     setToken(nextToken);
     setRole(nextRole);
     setEmail(nextEmail);
+    setName(nextName);
 
     setHttpAuth({ token: nextToken, role: nextRole });
 
-    await AsyncStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ token: nextToken, role: nextRole, email: nextEmail })
-    );
+    return res;
   }
 
-  async function logout() {
+  function logout() {
     setToken(null);
     setRole(null);
     setEmail(null);
-
+    setName(null);
     setHttpAuth({ token: null, role: null });
-    await AsyncStorage.removeItem(STORAGE_KEY);
   }
 
   const value = useMemo(
@@ -70,11 +41,11 @@ export function AuthProvider({ children }) {
       token,
       role,
       email,
-      isBootstrapping,
-      loginTeacher,
+      name,
+      login,
       logout,
     }),
-    [token, role, email, isBootstrapping]
+    [token, role, email, name]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

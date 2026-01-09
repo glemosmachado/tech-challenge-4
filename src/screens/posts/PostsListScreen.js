@@ -1,5 +1,4 @@
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -76,12 +75,6 @@ export default function PostsListScreen({ navigation }) {
     loadAll();
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadAll({ showDebug: false });
-    }, [])
-  );
-
   return (
     <View style={{ flex: 1, padding: 16, gap: 12 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -136,7 +129,7 @@ export default function PostsListScreen({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           renderItem={({ item }) => (
             <Pressable
-              onPress={() => navigation.navigate("PostRead", { id: item._id })}
+              onPress={() => navigation.navigate("PostRead", { id: item?._id })}
               style={{
                 borderWidth: 1,
                 borderColor: "#222",
@@ -144,9 +137,13 @@ export default function PostsListScreen({ navigation }) {
                 padding: 12,
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>{item?.title || "Sem título"}</Text>
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                {item?.title || "Sem título"}
+              </Text>
 
-              <Text style={{ marginTop: 4, opacity: 0.8 }}>Autor: {item?.author || "—"}</Text>
+              <Text style={{ marginTop: 4, opacity: 0.8 }}>
+                Autor: {item?.author || "—"}
+              </Text>
 
               <Text style={{ marginTop: 8 }} numberOfLines={2}>
                 {item?.content || "—"}

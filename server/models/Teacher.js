@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-const teacherSchema = new mongoose.Schema(
+const TeacherSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true, unique: true },
-    department: { type: String, default: "", trim: true }
+    passwordHash: { type: String, required: true },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Teacher", teacherSchema);
+module.exports = mongoose.model("Teacher", TeacherSchema);

@@ -3,29 +3,37 @@ import Constants from "expo-constants";
 
 const baseURL =
   Constants.expoConfig?.extra?.API_URL ||
-  Constants.manifest?.extra?.API_URL ||
-  "https://tech-challenge-2-d1kb.onrender.com";
+  "http://localhost:3000";
 
 console.log("API baseURL:", baseURL);
 
 export const http = axios.create({
   baseURL,
-  timeout: 60000,
+  timeout: 30000,
 });
 
+let currentToken = null;
 let currentRole = null;
 
-export function setHttpRole(role) {
-  currentRole = role;
+export function setHttpAuth({ token, role }) {
+  currentToken = token || null;
+  currentRole = role || null;
 }
 
 http.interceptors.request.use((config) => {
-  const method = (config.method || "get").toUpperCase();
-  console.log("REQ:", method, `${config.baseURL}${config.url}`);
+  config.headers = config.headers || {};
+
+  if (currentToken) {
+    config.headers.Authorization = `Bearer ${currentToken}`;
+    return config;
+  }
 
   if (currentRole === "teacher") {
-    config.headers = config.headers || {};
     config.headers["x-user-type"] = "teacher";
   }
+  if (currentRole === "student") {
+    config.headers["x-user-type"] = "student";
+  }
+
   return config;
 });
