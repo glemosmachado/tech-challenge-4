@@ -3,22 +3,27 @@ import Constants from "expo-constants";
 
 const baseURL = Constants.expoConfig?.extra?.API_URL;
 
-export const http = axios.create({ baseURL });
+export const http = axios.create({
+  baseURL,
+  timeout: 30000,
+});
 
-let currentToken = null;
+let authToken = null;
 
 export function setHttpAuth(token) {
-  currentToken = token;
+  authToken = token;
 }
 
 export function clearHttpAuth() {
-  currentToken = null;
+  authToken = null;
 }
 
 http.interceptors.request.use((config) => {
-  if (currentToken) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${currentToken}`;
+  config.headers = config.headers || {};
+
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
   }
+
   return config;
 });
