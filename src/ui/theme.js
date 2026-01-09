@@ -1,70 +1,40 @@
-const theme = {
+export const theme = {
   colors: {
-    bg: "#07060b",
-    bg2: "#0d0b14",
-    card: "#12111a",
-    card2: "#171622",
-    border: "rgba(255,255,255,0.10)",
-    text: "rgba(255,255,255,0.92)",
-    muted: "rgba(255,255,255,0.62)",
-    subtle: "rgba(255,255,255,0.42)",
-    danger: "#ff3b5c",
-    success: "#38d68b",
-    accent: "#9b87ff", // roxo
-    accent2: "#c2b7ff",
+    screen: "#0B0B10",
+    surface: "#0F0F16",
+    inputBg: "#121225",
+
+    text: "#F2F2F7",
+    textMuted: "rgba(242,242,247,0.62)",
+
+    border: "rgba(255,255,255,0.12)",
+
+    accent: "#A78BFA",
+    accent2: "#FF8A3D",
+
+    danger: "#FF4D6D",
+    success: "#2BD576",
+    warning: "#FFB020",
   },
 
-  spacing: {
-    xs: 6,
-    sm: 10,
-    md: 14,
-    lg: 18,
-    xl: 24,
+  typography: {
+    h1: { fontSize: 28, fontWeight: "800", letterSpacing: -0.3 },
+    h2: { fontSize: 20, fontWeight: "800", letterSpacing: -0.2 },
+    h3: { fontSize: 16, fontWeight: "700" },
+    body: { fontSize: 16, fontWeight: "400" },
+    small: { fontSize: 13, fontWeight: "400" },
   },
 
   radius: {
-    sm: 12,
-    md: 16,
-    lg: 22,
-    pill: 999,
+    card: 18,
+    input: 16,
+    button: 16,
   },
 
-  screen: {
-    padding: 18,
-    gap: 12,
-    maxWidth: 900,
-  },
-
-  nav: {
-    screen: {
-      headerStyle: { backgroundColor: "#07060b" },
-      headerTintColor: "rgba(255,255,255,0.92)",
-      headerTitleStyle: { color: "rgba(255,255,255,0.92)" },
-      headerShadowVisible: false,
-    },
-    tab: {
-      tabBarStyle: {
-        backgroundColor: "#07060b",
-        borderTopColor: "rgba(255,255,255,0.10)",
-      },
-      tabBarActiveTintColor: "#9b87ff",
-      tabBarInactiveTintColor: "rgba(255,255,255,0.45)",
-      tabBarLabelStyle: { paddingBottom: 4 },
-    },
-  },
-
-  navigationTheme: {
-    dark: true,
-    colors: {
-      primary: "#9b87ff",
-      background: "#07060b",
-      card: "#07060b",
-      text: "rgba(255,255,255,0.92)",
-      border: "rgba(255,255,255,0.10)",
-      notification: "#9b87ff",
-    },
+  spacing: {
+    pageX: 16,
+    pageTopAndroid: 10,
   },
 };
 
-export { theme };
 export default theme;

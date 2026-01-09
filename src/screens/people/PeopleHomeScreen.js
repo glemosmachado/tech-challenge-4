@@ -1,45 +1,31 @@
-import { View } from "react-native";
-import { useAuth } from "../../context/AuthContext";
-import { Button, Card, H1, Muted, Screen } from "../../ui/components";
+import { StyleSheet } from "react-native";
+import { Card, PrimaryButton, Screen, Subtitle, Title } from "../../ui/components";
 
 export default function PeopleHomeScreen({ navigation }) {
-  const { user } = useAuth();
-
-  const isTeacher = user?.role === "teacher";
-
   return (
-    <Screen style={{ gap: 14 }}>
-      <H1>Pessoas</H1>
-
-      <Muted>
+    <Screen>
+      <Title style={styles.h1}>Pessoas</Title>
+      <Subtitle style={styles.p}>
         Cadastre, edite e exclua professores e alunos (apenas professor logado).
-      </Muted>
+      </Subtitle>
 
-      <Card style={{ gap: 12 }}>
-        <Button
+      <Card style={styles.card}>
+        <PrimaryButton
           title="Professores"
-          variant={isTeacher ? "primary" : "ghost"}
           onPress={() => navigation.navigate("TeachersList")}
-          disabled={!isTeacher}
         />
 
-        <Button
+        <PrimaryButton
           title="Alunos"
-          variant={isTeacher ? "primary" : "ghost"}
           onPress={() => navigation.navigate("StudentsList")}
-          disabled={!isTeacher}
         />
       </Card>
-
-      {!isTeacher ? (
-        <Card>
-          <Muted>
-            Você está logado como aluno. A área de Pessoas é restrita a professores.
-          </Muted>
-        </Card>
-      ) : (
-        <View />
-      )}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  h1: { marginBottom: 6 },
+  p: { marginBottom: 16 },
+  card: { gap: 12 },
+});

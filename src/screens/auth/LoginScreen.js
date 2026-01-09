@@ -1,58 +1,62 @@
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 
-import { useAuth } from "../../context/AuthContext";
-import { ui } from "../../ui/components";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function LoginScreen() {
-  const { loginTeacher, loginStudent } = useAuth();
+  const auth = useContext(AuthContext) || {};
 
-  const [mode, setMode] = useState("teacher"); // "teacher" | "student"
-  const [email, setEmail] = useState(mode === "teacher" ? "prof@fiap.com" : "");
-  const [password, setPassword] = useState(mode === "teacher" ? "123456" : "");
+  const [role, setRole] = useState("teacher"); 
+  const [email, setEmail] = useState("prof@fiap.com");
+  const [password, setPassword] = useState("123456");
   const [loading, setLoading] = useState(false);
 
-  const title = useMemo(() => {
-    return mode === "teacher" ? "Login (Professor)" : "Login (Aluno)";
-  }, [mode]);
-
-  function switchMode(next) {
-    setMode(next);
-    setEmail(next === "teacher" ? "prof@fiap.com" : "");
-    setPassword(next === "teacher" ? "123456" : "");
-  }
+  const title = useMemo(
+    () => (role === "teacher" ? "Login (Professor)" : "Login (Aluno)"),
+    [role]
+  );
 
   async function handleLogin() {
-    const e = email.trim();
-    const p = password.trim();
+    const e = String(email || "").trim().toLowerCase();
+    const p = String(password || "").trim();
 
     if (!e || !p) {
-      Alert.alert("Erro", "Preencha e-mail e senha.");
+      Alert.alert("Erro", "Email e senha são obrigatórios.");
       return;
     }
 
-    try {
-      setLoading(true);
+    const fn =
+      role === "teacher" ? auth.loginTeacher || auth.loginteacher : auth.loginStudent || auth.loginstudent;
 
-      if (mode === "teacher") {
-        await loginTeacher(e, p);
+    if (typeof fn !== "function") {
+      Alert.alert(
+        "Erro",
+        `Função de login não encontrada no AuthContext (${role}).\nVerifique se existe loginTeacher/loginStudent.`
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (fn.length >= 2) {
+        await fn(e, p);
       } else {
-        await loginStudent(e, p);
+        await fn({ email: e, password: p });
       }
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
         err?.message ||
-        "Falha ao fazer login.";
+        "Falha ao efetuar login.";
       Alert.alert("Erro", msg);
     } finally {
       setLoading(false);
@@ -61,93 +65,188 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={ui.screen}
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={{ gap: 12 }}>
-        <Text style={ui.headerTitle}>Login</Text>
-        <Text style={ui.headerSubtitle}>
-          Entre como professor ou aluno para acessar o app.
+      <View style={styles.header}>
+        <Text style={styles.appTitle}>Tech Challenge 4</Text>
+        <Text style={styles.subtitle}>Acesso ao sistema</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{title}</Text>
+
+        <View style={styles.segment}>
+          <Pressable
+            onPress={() => setRole("teacher")}
+            style={[
+              styles.segmentBtn,
+              role === "teacher" && styles.segmentBtnActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                role === "teacher" && styles.segmentTextActive,
+              ]}
+            >
+              Professor
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setRole("student")}
+            style={[
+              styles.segmentBtn,
+              role === "student" && styles.segmentBtnActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                role === "student" && styles.segmentTextActive,
+              ]}
+            >
+              Aluno
+            </Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.label}>Email</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="ex: prof@fiap.com"
+          placeholderTextColor="rgba(255,255,255,0.35)"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+
+        <Text style={styles.label}>Senha</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="sua senha"
+          placeholderTextColor="rgba(255,255,255,0.35)"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        <Pressable
+          onPress={handleLogin}
+          disabled={loading}
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            pressed && { opacity: 0.85 },
+            loading && { opacity: 0.6 },
+          ]}
+        >
+          <Text style={styles.primaryBtnText}>
+            {loading ? "Entrando..." : "Entrar"}
+          </Text>
+        </Pressable>
+
+        <Text style={styles.hint}>
+          Dica: professor usa o admin do .env (prof@fiap.com / 123456) ou um
+          professor criado pelo app.
         </Text>
-
-        <View style={[ui.row, { marginTop: 10 }]}>
-          <Pressable
-            onPress={() => switchMode("teacher")}
-            style={[
-              ui.btn,
-              ui.btnGhost,
-              {
-                flex: 1,
-                borderColor:
-                  mode === "teacher" ? "rgba(168,85,247,0.55)" : ui.btnGhost.borderColor,
-                backgroundColor:
-                  mode === "teacher" ? "rgba(168,85,247,0.12)" : "transparent",
-              },
-            ]}
-          >
-            <Text style={ui.btnGhostText}>Professor</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => switchMode("student")}
-            style={[
-              ui.btn,
-              ui.btnGhost,
-              {
-                flex: 1,
-                borderColor:
-                  mode === "student" ? "rgba(168,85,247,0.55)" : ui.btnGhost.borderColor,
-                backgroundColor:
-                  mode === "student" ? "rgba(168,85,247,0.12)" : "transparent",
-              },
-            ]}
-          >
-            <Text style={ui.btnGhostText}>Aluno</Text>
-          </Pressable>
-        </View>
-
-        <View style={[ui.card, { marginTop: 12, gap: 10 }]}>
-          <Text style={ui.cardTitle}>{title}</Text>
-
-          <Text style={ui.inputLabel}>E-mail</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="ex: prof@fiap.com"
-            placeholderTextColor="rgba(255,255,255,0.35)"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={ui.input}
-          />
-
-          <Text style={ui.inputLabel}>Senha</Text>
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="sua senha"
-            placeholderTextColor="rgba(255,255,255,0.35)"
-            secureTextEntry
-            autoCapitalize="none"
-            style={ui.input}
-          />
-
-          <Pressable
-            onPress={handleLogin}
-            disabled={loading}
-            style={[
-              ui.btn,
-              ui.btnPrimary,
-              { marginTop: 14, opacity: loading ? 0.7 : 1 },
-            ]}
-          >
-            {loading ? (
-              <ActivityIndicator />
-            ) : (
-              <Text style={ui.btnPrimaryText}>Entrar</Text>
-            )}
-          </Pressable>
-        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#07060b",
+    padding: 18,
+    justifyContent: "center",
+  },
+  header: {
+    marginBottom: 14,
+  },
+  appTitle: {
+    color: "rgba(255,255,255,0.92)",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
+  subtitle: {
+    marginTop: 6,
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 13,
+  },
+  card: {
+    backgroundColor: "#12111a",
+    borderColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+  },
+  cardTitle: {
+    color: "rgba(255,255,255,0.92)",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  segment: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 14,
+  },
+  segmentBtn: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+    backgroundColor: "#0d0b14",
+  },
+  segmentBtnActive: {
+    backgroundColor: "#9b87ff",
+    borderColor: "rgba(155,135,255,0.65)",
+  },
+  segmentText: {
+    color: "rgba(255,255,255,0.72)",
+    fontWeight: "700",
+  },
+  segmentTextActive: {
+    color: "#0b0a10",
+  },
+  label: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 12,
+    marginTop: 8,
+    marginBottom: 6,
+    fontWeight: "600",
+  },
+  input: {
+    backgroundColor: "#0d0b14",
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+    color: "rgba(255,255,255,0.92)",
+  },
+  primaryBtn: {
+    marginTop: 14,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: "#9b87ff",
+  },
+  primaryBtnText: {
+    color: "#0b0a10",
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  hint: {
+    marginTop: 10,
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 12,
+    lineHeight: 16,
+  },
+});
