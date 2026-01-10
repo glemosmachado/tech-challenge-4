@@ -1,67 +1,77 @@
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
   RefreshControl,
+  StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
+
 import { PostsApi } from "../../api/posts";
+import { Card, H1, Input, Loading, Muted, Screen } from "../../ui/components";
+import theme from "../../ui/theme";
 
 export default function PostsAdminScreen({ navigation }) {
   const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [message, setMessage] = useState("");
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return posts;
-    return posts.filter((p) => {
-      const t = String(p?.title || "").toLowerCase();
-      const a = String(p?.author || "").toLowerCase();
-      const c = String(p?.content || "").toLowerCase();
-      return t.includes(q) || a.includes(q) || c.includes(q);
-    });
-  }, [posts, query]);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim().toLowerCase()), 250);
+    return () => clearTimeout(t);
+  }, [query]);
 
-  async function loadAll({ showDebug = false } = {}) {
+  const load = useCallback(async () => {
+    setLoading(true);
     try {
-      setMessage("");
-      setLoading(true);
       const data = await PostsApi.list();
-      const arr = Array.isArray(data) ? data : [];
+      const arr = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
       setPosts(arr);
-      if (showDebug) setMessage(`debug: carregou ${arr.length} posts`);
     } catch (e) {
-      setMessage(e?.message || "Falha ao carregar posts");
+      Alert.alert("Erro", e?.message || "Falha ao carregar posts");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   useFocusEffect(
     useCallback(() => {
-      loadAll();
-    }, [])
+      load();
+    }, [load])
   );
 
   async function onRefresh() {
     setRefreshing(true);
     try {
-      await loadAll();
+      await load();
     } finally {
       setRefreshing(false);
     }
   }
 
-  async function handleDelete(postId) {
-    Alert.alert("Excluir", "Deseja excluir este post?", [
+  const filtered = useMemo(() => {
+    if (!debounced) return posts;
+
+    return posts.filter((p) => {
+      const t = String(p?.title || "").toLowerCase();
+      const a = String(p?.author || "").toLowerCase();
+      const c = String(p?.content || "").toLowerCase();
+      return t.includes(debounced) || a.includes(debounced) || c.includes(debounced);
+    });
+  }, [posts, debounced]);
+
+  function confirmDelete(postId) {
+    Alert.alert("Excluir post", "Essa ação não pode ser desfeita.", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Excluir",
@@ -69,7 +79,6 @@ export default function PostsAdminScreen({ navigation }) {
         onPress: async () => {
           try {
             await PostsApi.remove(postId);
-            // remove da lista na hora
             setPosts((prev) => prev.filter((p) => p?._id !== postId));
           } catch (e) {
             Alert.alert("Erro", e?.message || "Falha ao excluir post");
@@ -79,115 +88,171 @@ export default function PostsAdminScreen({ navigation }) {
     ]);
   }
 
-  return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: "700" }}>Admin - Posts</Text>
+  function excerpt(text, max = 120) {
+    const s = String(text || "").replace(/\s+/g, " ").trim();
+    if (!s) return "Sem conteúdo.";
+    return s.length > max ? s.slice(0, max).trim() + "…" : s;
+  }
 
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Buscar por título, autor ou conteúdo..."
-          autoCapitalize="none"
-          style={{
-            flex: 1,
-            borderWidth: 1,
-            borderColor: "#333",
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-            borderRadius: 10,
-          }}
-        />
+  function renderItem({ item }) {
+    return (
+      <Card style={styles.card}>
+        <Pressable
+          onPress={() => navigation.navigate("PostRead", { id: item._id })}
+          style={({ pressed }) => [styles.cardPress, pressed && { opacity: 0.92 }]}
+        >
+          <View style={styles.cardTop}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title} numberOfLines={1}>
+                {item?.title || "Sem título"}
+              </Text>
+              <Text style={styles.meta} numberOfLines={1}>
+                Autor: {item?.author || "—"}
+              </Text>
+              <Text style={styles.desc} numberOfLines={3}>
+                {excerpt(item?.content)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.actions}>
+            <Pressable
+              onPress={() => navigation.navigate("PostEdit", { id: item._id })}
+              style={({ pressed }) => [styles.btnEdit, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.btnText}>Editar</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => confirmDelete(item._id)}
+              style={({ pressed }) => [styles.btnDelete, pressed && { opacity: 0.9 }]}
+            >
+              <Text style={styles.btnText}>Excluir</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Card>
+    );
+  }
+
+  return (
+    <Screen contentStyle={styles.content}>
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <H1>Admin</H1>
+          <Muted>{filtered.length} post(s)</Muted>
+        </View>
 
         <Pressable
           onPress={() => navigation.navigate("PostCreate")}
-          style={{
-            borderWidth: 1,
-            borderColor: "#333",
-            borderRadius: 10,
-            paddingHorizontal: 14,
-            justifyContent: "center",
-          }}
+          style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.85 }]}
         >
-          <Text style={{ fontWeight: "700" }}>Novo</Text>
+          <Text style={styles.newBtnText}>Novo</Text>
         </Pressable>
       </View>
 
-      {message ? <Text style={{ color: "#b00020" }}>{message}</Text> : null}
+      <Input
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Buscar por título, autor ou conteúdo..."
+      />
 
       {loading ? (
-        <View style={{ paddingTop: 24 }}>
-          <ActivityIndicator />
-        </View>
-      ) : filtered.length === 0 ? (
-        <Text>Nenhum post encontrado.</Text>
+        <Loading text="Carregando..." />
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(item, idx) => item?._id || String(idx)}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          renderItem={({ item }) => {
-            const id = item?._id;
-            return (
-              <Pressable
-                onPress={() =>
-                  navigation.navigate("PostRead", { postId: id })
-                }
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#222",
-                  borderRadius: 12,
-                  padding: 12,
-                  gap: 8,
-                }}
-              >
-                <Text style={{ fontSize: 16, fontWeight: "700" }}>
-                  {item?.title || "Sem título"}
-                </Text>
-
-                <Text style={{ opacity: 0.8 }}>
-                  Autor: {item?.author || "—"}
-                </Text>
-
-                <Text numberOfLines={2}>{item?.content || "—"}</Text>
-
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                  <Pressable
-                    onPress={() => navigation.navigate("PostEdit", { postId: id })}
-                    style={{
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: "#333",
-                    }}
-                  >
-                    <Text style={{ fontWeight: "700" }}>Editar</Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => handleDelete(id)}
-                    style={{
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: "#b00020",
-                    }}
-                  >
-                    <Text style={{ fontWeight: "700", color: "#b00020" }}>
-                      Excluir
-                    </Text>
-                  </Pressable>
-                </View>
-              </Pressable>
-            );
-          }}
+          keyExtractor={(it) => it._id}
+          renderItem={renderItem}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={{ paddingBottom: 18 }}
         />
       )}
-    </View>
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  content: { paddingTop: 14, gap: 12 },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  newBtn: {
+    backgroundColor: theme.colors.accent,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+
+  newBtnText: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 14,
+  },
+
+  card: {
+    padding: 16,
+    gap: 12,
+  },
+
+  cardPress: {
+    gap: 12,
+  },
+
+  cardTop: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+  },
+
+  title: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+
+  meta: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+  },
+
+  desc: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    marginTop: 8,
+    lineHeight: 18,
+  },
+
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  btnEdit: {
+    flex: 1,
+    backgroundColor: theme.colors.accent,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+
+  btnDelete: {
+    flex: 1,
+    backgroundColor: theme.colors.danger,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+
+  btnText: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 14,
+  },
+});

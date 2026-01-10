@@ -11,10 +11,13 @@ import {
 } from "react-native";
 
 import { StudentsApi } from "../../api/students";
+import { useAuth } from "../../context/AuthContext";
 import { Card, H1, Input, Loading, Muted, Screen } from "../../ui/components";
 import theme from "../../ui/theme";
 
 export default function StudentsListScreen({ navigation }) {
+  const { isTeacher } = useAuth();
+
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
 
@@ -105,23 +108,31 @@ export default function StudentsListScreen({ navigation }) {
               Matrícula: {reg}
             </Text>
           </View>
+
+          {!isTeacher ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>Somente leitura</Text>
+            </View>
+          ) : null}
         </View>
 
-        <View style={styles.actions}>
-          <Pressable
-            onPress={() => navigation.navigate("StudentEdit", { id: item._id })}
-            style={({ pressed }) => [styles.btnEdit, pressed && { opacity: 0.85 }]}
-          >
-            <Text style={styles.btnText}>Editar</Text>
-          </Pressable>
+        {isTeacher ? (
+          <View style={styles.actions}>
+            <Pressable
+              onPress={() => navigation.navigate("StudentEdit", { id: item._id })}
+              style={({ pressed }) => [styles.btnEdit, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.btnText}>Editar</Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => handleDelete(item)}
-            style={({ pressed }) => [styles.btnDelete, pressed && { opacity: 0.9 }]}
-          >
-            <Text style={styles.btnText}>Excluir</Text>
-          </Pressable>
-        </View>
+            <Pressable
+              onPress={() => handleDelete(item)}
+              style={({ pressed }) => [styles.btnDelete, pressed && { opacity: 0.9 }]}
+            >
+              <Text style={styles.btnText}>Excluir</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </Card>
     );
   }
@@ -131,15 +142,19 @@ export default function StudentsListScreen({ navigation }) {
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <H1>Alunos</H1>
-          <Muted>{filtered.length} no total</Muted>
+          <Muted>
+            {filtered.length} no total {isTeacher ? "" : "• somente leitura"}
+          </Muted>
         </View>
 
-        <Pressable
-          onPress={() => navigation.navigate("StudentCreate")}
-          style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.85 }]}
-        >
-          <Text style={styles.newBtnText}>Novo</Text>
-        </Pressable>
+        {isTeacher ? (
+          <Pressable
+            onPress={() => navigation.navigate("StudentCreate")}
+            style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={styles.newBtnText}>Novo</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <Input
@@ -195,6 +210,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     alignItems: "flex-start",
+  },
+
+  badge: {
+    backgroundColor: "rgba(167,139,250,0.14)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+  },
+
+  badgeText: {
+    color: theme.colors.text,
+    fontWeight: "900",
+    fontSize: 12,
   },
 
   name: {

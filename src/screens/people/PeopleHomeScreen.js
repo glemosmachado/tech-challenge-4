@@ -1,157 +1,162 @@
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { Button, Card, H1, Muted, Screen } from "../../ui/components";
+import { useMemo, useState } from "react";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useAuth } from "../../context/AuthContext";
 import theme from "../../ui/theme";
 
 export default function PeopleHomeScreen({ navigation }) {
-  function showInfo() {
-    Alert.alert(
-      "Permissão",
-      "Somente professores autenticados podem criar, editar e excluir professores e alunos. Alunos podem apenas visualizar posts."
-    );
-  }
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  const isTeacher = useMemo(() => {
+    const r = String(user?.role || user?.type || user?.userType || "").toLowerCase();
+    if (user?.isTeacher === true) return true;
+    return r === "teacher" || r === "professor" || r === "docente";
+  }, [user]);
 
   return (
-    <Screen contentStyle={styles.content}>
-      <View style={styles.header}>
-        <H1 style={styles.title}>Pessoas</H1>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.h1}>Pessoas</Text>
+          <Text style={styles.p}>
+            {isTeacher ? "Cadastre e gerencie professores e alunos." : "Visualize professores e alunos."}
+          </Text>
+        </View>
 
-        <View style={styles.subtitleRow}>
-          <Muted style={styles.subtitle}>
-            Cadastre e gerencie professores e alunos
-          </Muted>
+        <Pressable onPress={() => setOpen(true)} style={styles.infoBtn}>
+          <Text style={styles.infoText}>i</Text>
+        </Pressable>
+      </View>
 
-          <Pressable
-            onPress={showInfo}
-            hitSlop={12}
-            style={({ pressed }) => [
-              styles.infoBtn,
-              pressed && { opacity: 0.75 },
-            ]}
-          >
-            <Text style={styles.infoText}>i</Text>
-          </Pressable>
+      <View style={styles.card}>
+        <Text style={styles.section}>Ações</Text>
+        <Text style={styles.subsection}>Escolha uma área para {isTeacher ? "gerenciar" : "visualizar"}</Text>
+
+        <Pressable
+          onPress={() => navigation.navigate("TeachersList")}
+          style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+        >
+          <Text style={styles.primaryBtnText}>{isTeacher ? "Professores" : "Ver professores"}</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => navigation.navigate("StudentsList")}
+          style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+        >
+          <Text style={styles.primaryBtnText}>{isTeacher ? "Alunos" : "Ver alunos"}</Text>
+        </Pressable>
+
+        <View style={styles.tip}>
+          <Text style={styles.tipTitle}>{isTeacher ? "Dica" : "Acesso"}</Text>
+          <Text style={styles.tipText}>
+            {isTeacher
+              ? "Use a aba Admin para gerenciar posts (criar/editar/excluir)."
+              : "Você está no modo somente leitura. Para criar/editar/excluir, entre como professor."}
+          </Text>
         </View>
       </View>
 
-      <Card style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Ações</Text>
-          <Text style={styles.cardHint}>Escolha uma área para gerenciar</Text>
-        </View>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Permissões</Text>
 
-        <View style={styles.actions}>
-          <Button
-            title="Professores"
-            onPress={() => navigation.navigate("TeachersList")}
-            style={styles.actionBtn}
-          />
+            <Text style={styles.modalText}>
+              Professor: pode criar, editar e excluir professores, alunos e posts (na aba Admin).
+            </Text>
+            <Text style={styles.modalText}>
+              Aluno: pode apenas visualizar posts, professores e alunos.
+            </Text>
 
-          <Button
-            title="Alunos"
-            onPress={() => navigation.navigate("StudentsList")}
-            style={styles.actionBtn}
-          />
-        </View>
-
-        <View style={styles.noteBox}>
-          <Text style={styles.noteTitle}>Dica</Text>
-          <Text style={styles.noteText}>
-            Use a aba Admin para gerenciar posts (criar/editar/excluir).
-          </Text>
-        </View>
-      </Card>
-    </Screen>
+            <Pressable
+              onPress={() => setOpen(false)}
+              style={({ pressed }) => [styles.modalBtn, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.modalBtnText}>Entendi</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingTop: 18,
-    gap: 14,
-  },
+  screen: { flex: 1, backgroundColor: theme.colors.screen },
+  content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 18, gap: 12 },
 
-  header: {
-    gap: 8,
-  },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
 
-  title: {
-    marginBottom: 2,
-  },
-
-  subtitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-
-  subtitle: {
-    flex: 1,
-  },
+  h1: { color: theme.colors.text, fontSize: 34, fontWeight: "900", marginBottom: 6 },
+  p: { color: theme.colors.textMuted, fontSize: 14, lineHeight: 18 },
 
   infoBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
   },
-
-  infoText: {
-    color: theme.colors.text,
-    fontWeight: "900",
-    fontSize: 14,
-    marginTop: -1,
-  },
+  infoText: { color: theme.colors.text, fontWeight: "900", fontSize: 16, marginTop: -1 },
 
   card: {
-    gap: 14,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 18,
     padding: 16,
-  },
-
-  cardHeader: {
-    gap: 6,
-  },
-
-  cardTitle: {
-    color: theme.colors.text,
-    fontWeight: "900",
-    fontSize: 16,
-  },
-
-  cardHint: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
-  },
-
-  actions: {
     gap: 12,
-  },
-
-  actionBtn: {
-    width: "100%",
-  },
-
-  noteBox: {
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+
+  section: { color: theme.colors.text, fontSize: 18, fontWeight: "900" },
+  subsection: { color: theme.colors.textMuted, marginTop: -6, marginBottom: 6 },
+
+  primaryBtn: {
+    backgroundColor: theme.colors.accent,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  primaryBtnText: { color: "#fff", fontWeight: "900", fontSize: 16 },
+
+  tip: {
+    marginTop: 6,
     backgroundColor: theme.colors.inputBg,
     borderRadius: 14,
     padding: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     gap: 6,
   },
+  tipTitle: { color: theme.colors.text, fontWeight: "900" },
+  tipText: { color: theme.colors.textMuted, lineHeight: 18 },
 
-  noteTitle: {
-    color: theme.colors.text,
-    fontWeight: "900",
-    fontSize: 13,
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    padding: 18,
+    justifyContent: "center",
   },
+  modalCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 10,
+  },
+  modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: "900" },
+  modalText: { color: theme.colors.textMuted, lineHeight: 18 },
 
-  noteText: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
-    lineHeight: 18,
+  modalBtn: {
+    marginTop: 8,
+    backgroundColor: theme.colors.accent,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
   },
+  modalBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
 });

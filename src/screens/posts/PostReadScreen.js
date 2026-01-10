@@ -1,19 +1,29 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { PostsApi } from "../../api/posts";
-import { Card, Hint, Screen } from "../../ui/components";
-import { theme } from "../../ui/theme";
+import { Card, H1, Muted, Screen } from "../../ui/components";
+import theme from "../../ui/theme";
 
 export default function PostReadScreen({ route }) {
-  const { postId } = route.params || {};
+  const id = route?.params?.id || route?.params?.postId;
+
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState(null);
 
   async function load() {
+    if (!id) {
+      setPost(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const data = await PostsApi.getById(postId);
+      const data = await PostsApi.getById(id);
       setPost(data || null);
+    } catch (e) {
+      Alert.alert("Erro", e?.message || "Falha ao carregar post");
+      setPost(null);
     } finally {
       setLoading(false);
     }
@@ -21,11 +31,11 @@ export default function PostReadScreen({ route }) {
 
   useEffect(() => {
     load();
-  }, [postId]);
+  }, [id]);
 
   if (loading) {
     return (
-      <Screen title="Leitura">
+      <Screen contentStyle={styles.content}>
         <View style={{ paddingTop: 24 }}>
           <ActivityIndicator />
         </View>
@@ -35,31 +45,54 @@ export default function PostReadScreen({ route }) {
 
   if (!post) {
     return (
-      <Screen title="Leitura">
+      <Screen contentStyle={styles.content}>
         <Card>
-          <Text style={{ color: theme.colors.text, fontWeight: "800" }}>
-            Post não encontrado.
-          </Text>
-          <Hint>Verifique se ele foi removido ou se houve falha ao carregar.</Hint>
+          <Text style={styles.notFoundTitle}>Post não encontrado.</Text>
+          <Muted>Verifique se ele foi removido ou se houve falha ao carregar.</Muted>
         </Card>
       </Screen>
     );
   }
 
   return (
-    <Screen title="Leitura">
-      <Card style={{ gap: 10 }}>
-        <Text style={{ color: theme.colors.text, fontSize: theme.type.h1, fontWeight: "900" }}>
+    <Screen contentStyle={styles.content}>
+      <Card style={styles.card}>
+        <H1 numberOfLines={2} style={{ marginBottom: 6 }}>
           {post?.title || "Sem título"}
-        </Text>
-        <Hint>Autor: {post?.author || "—"}</Hint>
+        </H1>
 
-        <Card style={{ backgroundColor: theme.colors.surface2 }}>
-          <Text style={{ color: theme.colors.text, fontSize: theme.type.body, lineHeight: 22 }}>
-            {post?.content || "—"}
-          </Text>
-        </Card>
+        <Muted>Autor: {post?.author || "—"}</Muted>
+
+        <View style={styles.divider} />
+
+        <Text style={styles.body}>{post?.content || "—"}</Text>
       </Card>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  content: { paddingTop: 14 },
+
+  card: { gap: 10 },
+
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginTop: 6,
+    marginBottom: 6,
+  },
+
+  body: {
+    color: theme.colors.text,
+    fontSize: theme.typography.body.fontSize,
+    lineHeight: 22,
+  },
+
+  notFoundTitle: {
+    color: theme.colors.text,
+    fontSize: theme.typography.h2.fontSize,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+});

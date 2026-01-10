@@ -10,11 +10,18 @@ function errMsg(e, fallback) {
   );
 }
 
+function normalizeId(id) {
+  if (!id) return "";
+  if (typeof id === "string") return id;
+  if (typeof id === "object") return String(id._id || id.id || "");
+  return String(id);
+}
+
 export const PostsApi = {
   async list() {
     try {
       const res = await http.get("/posts");
-      return res.data; 
+      return res.data;
     } catch (e) {
       throw new Error(errMsg(e, "Failed to list posts"));
     }
@@ -23,16 +30,17 @@ export const PostsApi = {
   async search(query) {
     try {
       const res = await http.get("/posts/search", { params: { query } });
-      return res.data; 
+      return res.data;
     } catch (e) {
       throw new Error(errMsg(e, "Failed to search posts"));
     }
   },
 
   async getById(id) {
+    const pid = normalizeId(id);
     try {
-      const res = await http.get(`/posts/${id}`);
-      return res.data; 
+      const res = await http.get(`/posts/${pid}`);
+      return res.data;
     } catch (e) {
       throw new Error(errMsg(e, "Failed to get post"));
     }
@@ -48,8 +56,9 @@ export const PostsApi = {
   },
 
   async update(id, payload) {
+    const pid = normalizeId(id);
     try {
-      const res = await http.put(`/posts/${id}`, payload);
+      const res = await http.put(`/posts/${pid}`, payload);
       return res.data;
     } catch (e) {
       throw new Error(errMsg(e, "Failed to update post"));
@@ -57,8 +66,9 @@ export const PostsApi = {
   },
 
   async remove(id) {
+    const pid = normalizeId(id);
     try {
-      const res = await http.delete(`/posts/${id}`);
+      const res = await http.delete(`/posts/${pid}`);
       return res.data;
     } catch (e) {
       throw new Error(errMsg(e, "Failed to delete post"));

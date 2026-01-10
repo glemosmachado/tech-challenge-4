@@ -16,7 +16,7 @@ import { Card, H1, Input, Loading, Muted, Screen } from "../../ui/components";
 import theme from "../../ui/theme";
 
 export default function TeachersListScreen({ navigation }) {
-  const { user } = useAuth();
+  const { isTeacher, user } = useAuth();
 
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -64,6 +64,7 @@ export default function TeachersListScreen({ navigation }) {
 
   const filtered = useMemo(() => {
     if (!debounced) return items;
+
     return items.filter((t) => {
       const n = String(t?.name || "").toLowerCase();
       const e = String(t?.email || "").toLowerCase();
@@ -73,9 +74,6 @@ export default function TeachersListScreen({ navigation }) {
   }, [items, debounced]);
 
   async function handleDelete(item) {
-    const isMe = item?.email && user?.email && item.email === user.email;
-    if (isMe) return;
-
     Alert.alert("Excluir professor", "Essa ação não pode ser desfeita.", [
       { text: "Cancelar", style: "cancel" },
       {
@@ -94,7 +92,7 @@ export default function TeachersListScreen({ navigation }) {
   }
 
   function renderItem({ item }) {
-    const isMe = item?.email && user?.email && item.email === user.email;
+    const isMe = String(item?._id) === String(user?._id || user?.id);
 
     return (
       <Card style={styles.card}>
@@ -111,32 +109,46 @@ export default function TeachersListScreen({ navigation }) {
             </Text>
           </View>
 
-          {isMe ? (
+          {isTeacher && isMe ? (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>Você</Text>
             </View>
           ) : null}
+
+          {!isTeacher ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>Somente leitura</Text>
+            </View>
+          ) : null}
         </View>
 
-        <View style={styles.actions}>
-          <Pressable
-            onPress={() => navigation.navigate("TeacherEdit", { id: item._id })}
-            style={({ pressed }) => [styles.btnEdit, pressed && { opacity: 0.85 }]}
-          >
-            <Text style={styles.btnText}>Editar</Text>
-          </Pressable>
+        {isTeacher ? (
+          <View style={styles.actions}>
+            <Pressable
+              onPress={() => navigation.navigate("TeacherEdit", { id: item._id })}
+              disabled={isMe}
+              style={({ pressed }) => [
+                styles.btnEdit,
+                pressed && { opacity: 0.85 },
+                isMe && styles.btnDisabled,
+              ]}
+            >
+              <Text style={styles.btnText}>Editar</Text>
+            </Pressable>
 
-          <Pressable
-            disabled={isMe}
-            onPress={() => handleDelete(item)}
-            style={[
-              styles.btnDelete,
-              isMe && styles.btnBlocked,
-            ]}
-          >
-            <Text style={styles.btnText}>{isMe ? "Bloqueado" : "Excluir"}</Text>
-          </Pressable>
-        </View>
+            <Pressable
+              onPress={() => handleDelete(item)}
+              disabled={isMe}
+              style={({ pressed }) => [
+                styles.btnDelete,
+                pressed && { opacity: 0.9 },
+                isMe && styles.btnBlocked,
+              ]}
+            >
+              <Text style={styles.btnText}>{isMe ? "Bloqueado" : "Excluir"}</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </Card>
     );
   }
@@ -146,15 +158,19 @@ export default function TeachersListScreen({ navigation }) {
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <H1>Professores</H1>
-          <Muted>{filtered.length} no total</Muted>
+          <Muted>
+            {filtered.length} no total {isTeacher ? "" : "• somente leitura"}
+          </Muted>
         </View>
 
-        <Pressable
-          onPress={() => navigation.navigate("TeacherCreate")}
-          style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.85 }]}
-        >
-          <Text style={styles.newBtnText}>Novo</Text>
-        </Pressable>
+        {isTeacher ? (
+          <Pressable
+            onPress={() => navigation.navigate("TeacherCreate")}
+            style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={styles.newBtnText}>Novo</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <Input
@@ -212,6 +228,22 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
 
+  badge: {
+    backgroundColor: "rgba(167,139,250,0.14)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+  },
+
+  badgeText: {
+    color: theme.colors.text,
+    fontWeight: "900",
+    fontSize: 12,
+  },
+
   name: {
     color: theme.colors.text,
     fontSize: 18,
@@ -223,21 +255,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 13,
     marginTop: 2,
-  },
-
-  badge: {
-    backgroundColor: theme.colors.inputBg,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-
-  badgeText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 12,
   },
 
   actions: {
@@ -261,14 +278,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  btnBlocked: {
-    backgroundColor: "#7a2f3b",
-    opacity: 0.85,
-  },
-
   btnText: {
     color: "#fff",
     fontWeight: "900",
     fontSize: 14,
+  },
+
+  btnDisabled: {
+    opacity: 0.45,
+  },
+
+  btnBlocked: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+    opacity: 0.9,
   },
 });
