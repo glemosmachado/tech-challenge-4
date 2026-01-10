@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const requireTeacher = require("./middlewares/requireTeacher");
-const Teacher = require("./models/Teacher");
+const requireTeacher = require("../middlewares/requireTeacher");
+const Teacher = require("../models/Teacher");
 
 const router = express.Router();
 
