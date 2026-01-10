@@ -1,13 +1,13 @@
 import {
+    ActivityIndicator,
     Platform,
     Pressable,
-    SafeAreaView,
     StyleSheet,
     Text,
     TextInput,
     View,
 } from "react-native";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 import themeDefault, { theme as themeNamed } from "./theme";
 
 const T = themeNamed?.colors ? themeNamed : themeDefault;
@@ -23,8 +23,6 @@ export function Screen({ children, style, contentStyle }) {
     </SafeAreaView>
   );
 }
-
-export default Screen;
 
 export function Card({ children, style }) {
   return (
@@ -43,114 +41,19 @@ export function Card({ children, style }) {
   );
 }
 
-export function Row({ children, style }) {
-  return <View style={[styles.row, style]}>{children}</View>;
-}
-
-export function Spacer({ h = 12 }) {
-  return <View style={{ height: h }} />;
-}
-
-export function H1({ children, style, numberOfLines }) {
+export function H1({ children, style }) {
   return (
-    <Text
-      numberOfLines={numberOfLines}
-      style={[
-        pickTypo("h1", { fontSize: 28, fontWeight: "800" }),
-        { color: T.colors.text },
-        style,
-      ]}
-    >
+    <Text style={[pickTypo("h1"), { color: T.colors.text }, style]}>
       {children}
     </Text>
   );
 }
 
-export function H2({ children, style, numberOfLines }) {
-  return (
-    <Text
-      numberOfLines={numberOfLines}
-      style={[
-        pickTypo("h2", { fontSize: 20, fontWeight: "800" }),
-        { color: T.colors.text },
-        style,
-      ]}
-    >
-      {children}
-    </Text>
-  );
-}
-
-export function H3({ children, style, numberOfLines }) {
-  return (
-    <Text
-      numberOfLines={numberOfLines}
-      style={[
-        pickTypo("h3", { fontSize: 16, fontWeight: "700" }),
-        { color: T.colors.text },
-        style,
-      ]}
-    >
-      {children}
-    </Text>
-  );
-}
-
-export function Title({ children, style, numberOfLines }) {
-  return <H2 numberOfLines={numberOfLines} style={style}>{children}</H2>;
-}
-
-export function Subtitle({ children, style, numberOfLines }) {
-  return (
-    <Text
-      numberOfLines={numberOfLines}
-      style={[
-        pickTypo("body", { fontSize: 16, fontWeight: "400" }),
-        { color: T.colors.textMuted },
-        style,
-      ]}
-    >
-      {children}
-    </Text>
-  );
-}
-
-export function Label({ children, style }) {
-  return (
-    <Text
-      style={[
-        pickTypo("small", { fontSize: 13, fontWeight: "400" }),
-        { color: T.colors.textMuted },
-        style,
-      ]}
-    >
-      {children}
-    </Text>
-  );
-}
-
-export function Muted({ children, style }) {
-  return <Label style={style}>{children}</Label>;
-}
-
-export function Input({
-  value,
-  onChangeText,
-  placeholder,
-  secureTextEntry,
-  autoCapitalize = "none",
-  keyboardType,
-  style,
-}) {
+export function Input(props) {
   return (
     <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
+      {...props}
       placeholderTextColor={T.colors.textMuted}
-      secureTextEntry={secureTextEntry}
-      autoCapitalize={autoCapitalize}
-      keyboardType={keyboardType}
       style={[
         styles.input,
         {
@@ -158,31 +61,13 @@ export function Input({
           borderColor: T.colors.border,
           color: T.colors.text,
         },
-        style,
+        props.style,
       ]}
     />
   );
 }
 
-export function Button({
-  title,
-  onPress,
-  variant = "primary",
-  style,
-  textStyle,
-  disabled,
-}) {
-  const bg =
-    variant === "primary"
-      ? T.colors.accent
-      : variant === "secondary"
-      ? "rgba(255,255,255,0.08)"
-      : "transparent";
-
-  const border = variant === "ghost" ? T.colors.border : "transparent";
-
-  const color = variant === "primary" ? "#0B0B10" : T.colors.text;
-
+export function Button({ title, onPress, disabled, style }) {
   return (
     <Pressable
       onPress={onPress}
@@ -190,65 +75,36 @@ export function Button({
       style={({ pressed }) => [
         styles.btn,
         {
-          backgroundColor: bg,
-          borderColor: border,
+          backgroundColor: T.colors.accent,
           opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
         },
         style,
       ]}
     >
-      <Text style={[styles.btnText, { color }, textStyle]}>{title}</Text>
+      <Text style={styles.btnText}>{title}</Text>
     </Pressable>
   );
 }
 
-export function PrimaryButton(props) {
-  return <Button {...props} variant="primary" />;
+export function Muted({ children }) {
+  return <Text style={{ color: T.colors.textMuted }}>{children}</Text>;
 }
 
-export function SecondaryButton(props) {
-  return <Button {...props} variant="secondary" />;
-}
-
-export function GhostButton(props) {
-  return <Button {...props} variant="ghost" />;
-}
-
-export function DangerButton({ title, onPress, style, textStyle, disabled }) {
+export function Loading({ text }) {
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => [
-        styles.btn,
-        {
-          backgroundColor: "transparent",
-          borderColor: T.colors.danger,
-          opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
-        },
-        style,
-      ]}
-    >
-      <Text style={[styles.btnText, { color: T.colors.danger }, textStyle]}>
-        {title}
-      </Text>
-    </Pressable>
+    <View style={{ alignItems: "center", paddingVertical: 20 }}>
+      <ActivityIndicator />
+      {text ? <Text style={{ marginTop: 10 }}>{text}</Text> : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-  },
+  safe: { flex: 1 },
   content: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: Platform.OS === "android" ? 10 : 0,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
   },
   card: {
     borderWidth: 1,
@@ -263,15 +119,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   btn: {
-    borderWidth: 1,
     borderRadius: 16,
     paddingVertical: 12,
-    paddingHorizontal: 14,
     alignItems: "center",
-    justifyContent: "center",
   },
   btnText: {
     fontSize: 16,
     fontWeight: "800",
+    color: "#0B0B10",
   },
 });

@@ -18,8 +18,8 @@ export const theme = {
   },
 
   typography: {
-    h1: { fontSize: 28, fontWeight: "800", letterSpacing: -0.3 },
-    h2: { fontSize: 20, fontWeight: "800", letterSpacing: -0.2 },
+    h1: { fontSize: 28, fontWeight: "800" },
+    h2: { fontSize: 20, fontWeight: "800" },
     h3: { fontSize: 16, fontWeight: "700" },
     body: { fontSize: 16, fontWeight: "400" },
     small: { fontSize: 13, fontWeight: "400" },

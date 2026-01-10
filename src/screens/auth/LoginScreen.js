@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -15,10 +15,20 @@ import { AuthContext } from "../../context/AuthContext";
 export default function LoginScreen() {
   const auth = useContext(AuthContext) || {};
 
-  const [role, setRole] = useState("teacher"); 
+  const [role, setRole] = useState("teacher");
   const [email, setEmail] = useState("prof@fiap.com");
   const [password, setPassword] = useState("123456");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (role === "teacher") {
+      setEmail("prof@fiap.com");
+      setPassword("123456");
+    } else {
+      setEmail("aluno@fiap.com");
+      setPassword("123456");
+    }
+  }, [role]);
 
   const title = useMemo(
     () => (role === "teacher" ? "Login (Professor)" : "Login (Aluno)"),
@@ -35,7 +45,9 @@ export default function LoginScreen() {
     }
 
     const fn =
-      role === "teacher" ? auth.loginTeacher || auth.loginteacher : auth.loginStudent || auth.loginstudent;
+      role === "teacher"
+        ? auth.loginTeacher || auth.loginteacher
+        : auth.loginStudent || auth.loginstudent;
 
     if (typeof fn !== "function") {
       Alert.alert(
@@ -148,8 +160,8 @@ export default function LoginScreen() {
         </Pressable>
 
         <Text style={styles.hint}>
-          Dica: professor usa o admin do .env (prof@fiap.com / 123456) ou um
-          professor criado pelo app.
+          Dica: professor usa o admin do .env (prof@fiap.com / 123456) e aluno usa
+          (aluno@fiap.com / 123456).
         </Text>
       </View>
     </KeyboardAvoidingView>
@@ -160,8 +172,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#07060b",
-    padding: 18,
-    justifyContent: "center",
+    paddingHorizontal: 18,
+    paddingTop: 60,
+    justifyContent: "flex-start",
   },
   header: {
     marginBottom: 14,
@@ -243,10 +256,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 16,
   },
+  
   hint: {
     marginTop: 10,
     color: "rgba(255,255,255,0.45)",
     fontSize: 12,
     lineHeight: 16,
-  },
-});
+  }
+}); 

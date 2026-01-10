@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { TeachersApi } from "../../api/teachers";
+import theme from "../../ui/theme";
 
 export default function TeacherCreateScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -10,103 +11,133 @@ export default function TeacherCreateScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
+    const n = name.trim();
+    const e = email.trim().toLowerCase();
+    const p = password;
+
+    if (!n || !e || !p) {
+      Alert.alert("Campos obrigatórios", "Preencha Nome, Email e Senha.");
+      return;
+    }
+
+    setSaving(true);
     try {
-      setSaving(true);
-
       await TeachersApi.create({
-        name: name.trim(),
+        name: n,
+        email: e,
+        password: p,
         area: area.trim() || undefined,
-        email: email.trim(),
-        password,
       });
-
       navigation.goBack();
-    } catch (e) {
-      Alert.alert("Erro", e?.message || "Failed to create teacher");
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Falha ao criar professor";
+      Alert.alert("Erro", msg);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 10 }}>
-      <Text style={{ fontSize: 18, fontWeight: "700" }}>Novo Professor</Text>
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.label}>Nome</Text>
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="Ex: João Silva"
+          placeholderTextColor="rgba(255,255,255,0.45)"
+        />
 
-      <Text style={{ fontWeight: "600" }}>Nome</Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="Ex: João Silva"
-        style={{
-          borderWidth: 1,
-          borderColor: "#333",
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 10,
-        }}
-      />
+        <Text style={styles.label}>Email</Text>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Ex: joao@fiap.com"
+          placeholderTextColor="rgba(255,255,255,0.45)"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
 
-      <Text style={{ fontWeight: "600" }}>Email</Text>
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Ex: joao@fiap.com"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        style={{
-          borderWidth: 1,
-          borderColor: "#333",
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 10,
-        }}
-      />
+        <Text style={styles.label}>Senha</Text>
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Defina uma senha"
+          placeholderTextColor="rgba(255,255,255,0.45)"
+          secureTextEntry
+        />
 
-      <Text style={{ fontWeight: "600" }}>Senha</Text>
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Defina uma senha"
-        secureTextEntry
-        style={{
-          borderWidth: 1,
-          borderColor: "#333",
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 10,
-        }}
-      />
+        <Text style={styles.label}>Área (opcional)</Text>
+        <TextInput
+          style={styles.input}
+          value={area}
+          onChangeText={setArea}
+          placeholder="Ex: Matemática, TI, História..."
+          placeholderTextColor="rgba(255,255,255,0.45)"
+        />
 
-      <Text style={{ fontWeight: "600" }}>Área (opcional)</Text>
-      <TextInput
-        value={area}
-        onChangeText={setArea}
-        placeholder="Ex: Matemática, TI, História..."
-        style={{
-          borderWidth: 1,
-          borderColor: "#333",
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 10,
-        }}
-      />
-
-      <Pressable
-        onPress={handleSave}
-        disabled={saving}
-        style={{
-          marginTop: 6,
-          backgroundColor: "#111",
-          paddingVertical: 12,
-          borderRadius: 12,
-          alignItems: "center",
-          opacity: saving ? 0.6 : 1,
-        }}
-      >
-        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-          Salvar
-        </Text>
-      </Pressable>
+        <Pressable
+          onPress={handleSave}
+          disabled={saving}
+          style={({ pressed }) => [
+            styles.saveBtn,
+            pressed && { opacity: 0.85 },
+            saving && { opacity: 0.6 },
+          ]}
+        >
+          <Text style={styles.saveText}>{saving ? "Salvando..." : "Salvar"}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: theme.colors.screen,
+  },
+
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+
+  label: {
+    color: theme.colors.text,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+
+  input: {
+    backgroundColor: theme.colors.inputBg,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: "#fff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+
+  saveBtn: {
+    marginTop: 14,
+    backgroundColor: theme.colors.accent,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+
+  saveText: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 16,
+  },
+});

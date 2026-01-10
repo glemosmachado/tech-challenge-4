@@ -1,25 +1,54 @@
-import { useEffect, useState } from "react";
-import { Alert, FlatList, RefreshControl, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
 import { StudentsApi } from "../../api/students";
-import { Button, Card, H1, Input, Loading, Muted, Screen } from "../../ui/components";
+import { Card, H1, Input, Loading, Muted, Screen } from "../../ui/components";
+import theme from "../../ui/theme";
 
 export default function StudentsListScreen({ navigation }) {
   const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  async function load() {
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim().toLowerCase()), 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await StudentsApi.list({ q: query });
-      setItems(Array.isArray(data) ? data : []);
+      const data = await StudentsApi.list();
+      const arr = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+      setItems(arr);
     } catch (e) {
-      Alert.alert("Erro", e?.response?.data?.message || e?.message || "Falha ao carregar alunos");
+      Alert.alert("Erro", e?.message || "Falha ao carregar alunos");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   async function onRefresh() {
     setRefreshing(true);
@@ -30,77 +59,87 @@ export default function StudentsListScreen({ navigation }) {
     }
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  const filtered = useMemo(() => {
+    if (!debounced) return items;
 
-  useEffect(() => {
-    const t = setTimeout(() => load(), 250);
-    return () => clearTimeout(t);
-  }, [query]);
+    return items.filter((s) => {
+      const n = String(s?.name || "").toLowerCase();
+      const e = String(s?.email || "").toLowerCase();
+      const r = String(s?.registration || s?.rm || "").toLowerCase();
+      return n.includes(debounced) || e.includes(debounced) || r.includes(debounced);
+    });
+  }, [items, debounced]);
 
   async function handleDelete(item) {
-    Alert.alert(
-      "Excluir aluno",
-      "Tem certeza? Essa ação não pode ser desfeita.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await StudentsApi.remove(item._id);
-              setItems((prev) => prev.filter((x) => x._id !== item._id));
-            } catch (e) {
-              Alert.alert("Erro", e?.response?.data?.message || e?.message || "Falha ao excluir");
-            }
-          },
+    Alert.alert("Excluir aluno", "Essa ação não pode ser desfeita.", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await StudentsApi.remove(item._id);
+            setItems((prev) => prev.filter((x) => x._id !== item._id));
+          } catch (e) {
+            Alert.alert("Erro", e?.message || "Falha ao excluir");
+          }
         },
-      ]
-    );
+      },
+    ]);
   }
 
   function renderItem({ item }) {
+    const reg = item?.registration || item?.rm || "—";
+
     return (
-      <Card style={{ gap: 10 }}>
-        <H1 style={{ fontSize: 16 }}>{item?.name || "Sem nome"}</H1>
-
-        <Muted>{item?.email || "—"}</Muted>
-
-        <Muted>Matrícula: {item?.registration || "—"}</Muted>
-
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
+      <Card style={styles.card}>
+        <View style={styles.top}>
           <View style={{ flex: 1 }}>
-            <Button
-              title="Editar"
-              variant="outline"
-              onPress={() => navigation.navigate("StudentEdit", { id: item._id })}
-            />
+            <Text style={styles.name} numberOfLines={1}>
+              {item?.name || "Sem nome"}
+            </Text>
+            <Text style={styles.meta} numberOfLines={1}>
+              {item?.email || "—"}
+            </Text>
+            <Text style={styles.meta} numberOfLines={1}>
+              Matrícula: {reg}
+            </Text>
           </View>
+        </View>
 
-          <View style={{ flex: 1 }}>
-            <Button
-              title="Excluir"
-              variant="danger"
-              onPress={() => handleDelete(item)}
-            />
-          </View>
+        <View style={styles.actions}>
+          <Pressable
+            onPress={() => navigation.navigate("StudentEdit", { id: item._id })}
+            style={({ pressed }) => [styles.btnEdit, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={styles.btnText}>Editar</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => handleDelete(item)}
+            style={({ pressed }) => [styles.btnDelete, pressed && { opacity: 0.9 }]}
+          >
+            <Text style={styles.btnText}>Excluir</Text>
+          </Pressable>
         </View>
       </Card>
     );
   }
 
   return (
-    <Screen style={{ gap: 12 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <H1>Alunos</H1>
-        <View style={{ width: 120 }}>
-          <Button
-            title="Novo"
-            onPress={() => navigation.navigate("StudentCreate")}
-          />
+    <Screen contentStyle={styles.content}>
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <H1>Alunos</H1>
+          <Muted>{filtered.length} no total</Muted>
         </View>
+
+        <Pressable
+          onPress={() => navigation.navigate("StudentCreate")}
+          style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.85 }]}
+        >
+          <Text style={styles.newBtnText}>Novo</Text>
+        </Pressable>
       </View>
 
       <Input
@@ -111,19 +150,90 @@ export default function StudentsListScreen({ navigation }) {
 
       {loading ? (
         <Loading text="Carregando..." />
-      ) : items.length === 0 ? (
-        <Card>
-          <Muted>Nenhum aluno encontrado.</Muted>
-        </Card>
       ) : (
         <FlatList
-          data={items}
+          data={filtered}
           keyExtractor={(it) => it._id}
+          renderItem={renderItem}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 18 }}
         />
       )}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  content: { paddingTop: 14, gap: 12 },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  newBtn: {
+    backgroundColor: theme.colors.accent,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+
+  newBtnText: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 14,
+  },
+
+  card: {
+    padding: 16,
+    gap: 12,
+  },
+
+  top: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+  },
+
+  name: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+
+  meta: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    marginTop: 2,
+  },
+
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  btnEdit: {
+    flex: 1,
+    backgroundColor: theme.colors.accent,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+
+  btnDelete: {
+    flex: 1,
+    backgroundColor: theme.colors.danger,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+
+  btnText: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 14,
+  },
+});
