@@ -28,12 +28,12 @@ router.post("/login", async (req, res) => {
 
     const Model = normalizedRole === "teacher" ? Teacher : Student;
 
-    const user = await Model.findOne({ email: email.toLowerCase().trim() });
+    const user = await Model.findOne({ email: String(email).toLowerCase().trim() });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
     if (!user.passwordHash) return res.status(401).json({ message: "User has no password set" });
 
-    const ok = await bcrypt.compare(password, user.passwordHash);
+    const ok = await bcrypt.compare(String(password), user.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
     const token = signToken({

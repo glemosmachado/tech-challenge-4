@@ -23,8 +23,8 @@ router.get("/search", async (req, res) => {
     const posts = await Post.find({
       $or: [
         { title: { $regex: query, $options: "i" } },
-        { content: { $regex: query, $options: "i" } }
-      ]
+        { content: { $regex: query, $options: "i" } },
+      ],
     }).sort({ createdAt: -1 });
 
     return res.json(posts);

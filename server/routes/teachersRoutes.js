@@ -1,6 +1,9 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+
+const requireAuth = require("../middlewares/requireAuth");
 const requireTeacher = require("../middlewares/requireTeacher");
+
 const Teacher = require("../models/Teacher");
 
 const router = express.Router();
@@ -9,7 +12,7 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
-router.get("/", requireTeacher, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page || "1", 10), 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit || "10", 10), 1), 50);
@@ -29,25 +32,18 @@ router.get("/", requireTeacher, async (req, res) => {
 
 router.post("/", requireTeacher, async (req, res) => {
   try {
-    const { name, email, password, passwordHash: incomingHash, area } = req.body;
+    const { name, email, password, area } = req.body || {};
 
-    if (!name || !email) {
-      return res.status(400).json({ message: "name and email are required" });
-    }
-
-    let passwordHash = incomingHash;
-
-    if (!passwordHash) {
-      if (!password) {
-        return res.status(400).json({ message: "password is required" });
-      }
-      passwordHash = await bcrypt.hash(String(password), 10);
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "name, email and password are required" });
     }
 
     const normalizedEmail = normalizeEmail(email);
 
     const exists = await Teacher.findOne({ email: normalizedEmail });
     if (exists) return res.status(409).json({ message: "Email already exists" });
+
+    const passwordHash = await bcrypt.hash(String(password), 10);
 
     const created = await Teacher.create({
       name: String(name).trim(),
@@ -63,20 +59,20 @@ router.post("/", requireTeacher, async (req, res) => {
   }
 });
 
-router.get("/:id", requireTeacher, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const item = await Teacher.findById(req.params.id);
     if (!item) return res.status(404).json({ message: "Teacher not found" });
     res.json(item);
   } catch (e) {
     console.log("teachers get error:", e);
-    res.status(500).json({ message: "Failed to get teacher" });
+    res.status(400).json({ message: "Invalid id" });
   }
 });
 
 router.put("/:id", requireTeacher, async (req, res) => {
   try {
-    const { name, email, password, area } = req.body;
+    const { name, email, password, area } = req.body || {};
 
     const updates = {};
     if (name) updates.name = String(name).trim();
@@ -96,7 +92,7 @@ router.put("/:id", requireTeacher, async (req, res) => {
 
 router.delete("/:id", requireTeacher, async (req, res) => {
   try {
-    if (req.user?.id && String(req.user.id) === String(req.params.id)) {
+    if (req.user?.sub && String(req.user.sub) === String(req.params.id)) {
       return res.status(403).json({ message: "You cannot delete your own account" });
     }
 
