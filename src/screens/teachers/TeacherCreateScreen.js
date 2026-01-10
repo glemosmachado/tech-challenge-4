@@ -1,7 +1,20 @@
-import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { TeachersApi } from "../../api/teachers";
-import theme from "../../ui/theme";
+import { Button, Card, H1, Input, Muted, Screen } from "../../ui/components";
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
+}
+
+function getApiErrorMessage(err) {
+  return (
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    "Falha ao criar professor"
+  );
+}
 
 export default function TeacherCreateScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -10,134 +23,123 @@ export default function TeacherCreateScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const canSubmit = useMemo(() => {
+    const n = name.trim();
+    const e = email.trim();
+    const p = password;
+    return n.length >= 2 && isValidEmail(e) && p.length >= 4;
+  }, [name, email, password]);
+
   async function handleSave() {
     const n = name.trim();
-    const e = email.trim().toLowerCase();
+    const a = area.trim();
+    const e = email.trim();
     const p = password;
 
-    if (!n || !e || !p) {
-      Alert.alert("Campos obrigatórios", "Preencha Nome, Email e Senha.");
+    if (n.length < 2) {
+      Alert.alert("Erro", "Informe um nome válido.");
       return;
     }
 
-    setSaving(true);
+    if (!isValidEmail(e)) {
+      Alert.alert("Erro", "Informe um email válido (ex: joao@fiap.com).");
+      return;
+    }
+
+    if (!p || p.length < 4) {
+      Alert.alert("Erro", "Defina uma senha (mínimo 4 caracteres).");
+      return;
+    }
+
     try {
+      setSaving(true);
+
       await TeachersApi.create({
         name: n,
         email: e,
         password: p,
-        area: area.trim() || undefined,
+        area: a || undefined,
       });
+
+      Alert.alert("Sucesso", "Professor criado com sucesso.");
       navigation.goBack();
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Falha ao criar professor";
-      Alert.alert("Erro", msg);
+      Alert.alert("Erro", getApiErrorMessage(err));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.label}>Nome</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Ex: João Silva"
-          placeholderTextColor="rgba(255,255,255,0.45)"
-        />
+    <Screen>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.header}>
+          <H1>Novo professor</H1>
+          <Muted>Preencha os dados para cadastrar um novo docente.</Muted>
+        </View>
 
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Ex: joao@fiap.com"
-          placeholderTextColor="rgba(255,255,255,0.45)"
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        <Card style={styles.card}>
+          <Input
+            label="Nome"
+            value={name}
+            onChangeText={setName}
+            placeholder="Ex: João Silva"
+            autoCapitalize="words"
+            returnKeyType="next"
+          />
 
-        <Text style={styles.label}>Senha</Text>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Defina uma senha"
-          placeholderTextColor="rgba(255,255,255,0.45)"
-          secureTextEntry
-        />
+          <Input
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Ex: joao@fiap.com"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            returnKeyType="next"
+          />
 
-        <Text style={styles.label}>Área (opcional)</Text>
-        <TextInput
-          style={styles.input}
-          value={area}
-          onChangeText={setArea}
-          placeholder="Ex: Matemática, TI, História..."
-          placeholderTextColor="rgba(255,255,255,0.45)"
-        />
+          <Input
+            label="Senha"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Defina uma senha"
+            secureTextEntry
+            autoCapitalize="none"
+            returnKeyType="done"
+          />
 
-        <Pressable
-          onPress={handleSave}
-          disabled={saving}
-          style={({ pressed }) => [
-            styles.saveBtn,
-            pressed && { opacity: 0.85 },
-            saving && { opacity: 0.6 },
-          ]}
-        >
-          <Text style={styles.saveText}>{saving ? "Salvando..." : "Salvar"}</Text>
-        </Pressable>
-      </View>
-    </View>
+          <Input
+            label="Área (opcional)"
+            value={area}
+            onChangeText={setArea}
+            placeholder="Ex: Matemática, TI, História..."
+            autoCapitalize="words"
+          />
+
+          <Button
+            title={saving ? "Salvando..." : "Salvar"}
+            onPress={handleSave}
+            disabled={!canSubmit || saving}
+          />
+        </Card>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: theme.colors.screen,
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 12,
+    gap: 6,
   },
-
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 18,
-    padding: 16,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-
-  label: {
-    color: theme.colors.text,
-    fontWeight: "700",
-    marginTop: 6,
-  },
-
-  input: {
-    backgroundColor: theme.colors.inputBg,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#fff",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-
-  saveBtn: {
-    marginTop: 14,
-    backgroundColor: theme.colors.accent,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-
-  saveText: {
-    color: "#fff",
-    fontWeight: "900",
-    fontSize: 16,
+    marginHorizontal: 16,
+    gap: 12,
+    padding: 14,
   },
 });
